@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTransactions = [];
     let transactionsById = {};
     
+    // Batch tracking for API calls
+    let currentBatchId = 0;
+    let fadingBatchId = null;
+    
     // Transaction value color thresholds - Synthwave palette
     const VALUE_COLORS = {
         default: { r: 80, g: 250, b: 255 },     // Neon cyan (0-1 ETH)
@@ -280,6 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
             updateLatestBlock(transactions[0].blockNumber);
         }
         
+        // Increment batch ID for this new set of transactions
+        const previousBatchId = currentBatchId;
+        currentBatchId++;
+        
         // Add new transactions to our collection
         const newTransactions = transactions.filter(tx => {
             // Check if transaction already exists in our collection
@@ -287,6 +295,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (newTransactions.length === 0) return;
+        
+        // Tag each transaction with the current batch ID
+        newTransactions.forEach(tx => {
+            tx.batchId = currentBatchId;
+            tx.isFading = false;
+        });
         
         // Add to beginning of array (newest first)
         allTransactions = [...newTransactions, ...allTransactions];
@@ -312,6 +326,31 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update the value chart with new data point
         updateValueChart(newTransactions);
+        
+        // Set a timeout to fade the previous batch of transactions after 5 seconds
+        if (previousBatchId > 0) {
+            setTimeout(() => {
+                startFadingPreviousBatch(previousBatchId);
+            }, 5000);
+        }
+    }
+    
+    // Function to start fading transactions from a specific batch
+    function startFadingPreviousBatch(batchId) {
+        fadingBatchId = batchId;
+        
+        // Mark all transactions from this batch as fading
+        txDots.forEach(dot => {
+            if (dot.tx.batchId === batchId) {
+                dot.tx.isFading = true;
+                dot.fadeStartTime = Date.now();
+                
+                // Hide transaction details if the active transaction is now fading
+                if (activeTransaction && activeTransaction.hash === dot.tx.hash) {
+                    hideTransactionDetails();
+                }
+            }
+        });
     }
     
     // Update connection status UI
@@ -436,7 +475,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     blockNumber: blockNum, // Store block number for reference
                     rotationX: Math.random() * Math.PI, // X-axis rotation
                     rotationY: Math.random() * Math.PI, // Y-axis rotation
-                    rotationZ: Math.random() * Math.PI  // Z-axis rotation
+                    rotationZ: Math.random() * Math.PI,  // Z-axis rotation
+                    fadeStartTime: null // Track when fading starts for this dot
                 };
                 
                 // Add to txDots array
@@ -547,6 +587,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Array to track dots that are off-screen
         const dotsToRemove = [];
         
+        // Current time for fade calculations
+        const currentTime = Date.now();
+        const fadeDuration = 2000; // 2 seconds for fade out
+        
         // Draw each transaction cube
         txDots.forEach((dot, index) => {
             // Move cube leftward (from right to left)
@@ -564,6 +608,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fade in when entering from right
             if (dot.x > canvas.width - fadeDistance) {
                 opacity = 1 - ((dot.x - (canvas.width - fadeDistance)) / fadeDistance);
+            }
+            
+            // If this dot is from a fading batch, apply fade out effect
+            if (dot.tx.isFading && dot.fadeStartTime) {
+                const fadeElapsed = currentTime - dot.fadeStartTime;
+                if (fadeElapsed >= fadeDuration) {
+                    // Fully faded out, mark for removal
+                    dotsToRemove.push(index);
+                    return; // Skip drawing this dot
+                } else {
+                    // Calculate fade opacity (from 1 to 0 over fadeDuration)
+                    const fadeOpacity = 1 - (fadeElapsed / fadeDuration);
+                    opacity *= fadeOpacity;
+                }
             }
             
             // Check if dot is active

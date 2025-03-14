@@ -103,7 +103,7 @@ header {
 main {
     position: relative;
     z-index: 5;
-    height: calc(100vh - 144px); /* Adjusted for the increased chart height */
+    height: calc(100vh - 144px);
     display: flex;
     flex-direction: column;
 }
@@ -113,12 +113,12 @@ main {
     display: flex;
     flex-direction: row;
     flex: 1;
-    height: calc(100% - 144px); /* Adjusted for the increased chart height */
+    height: calc(100% - 144px);
     width: 100%;
     overflow: hidden;
 }
 
-/* Matrix panel (left or top) */
+/* Matrix panel (left) */
 #matrix-panel {
     flex: 1;
     min-width: 50%;
@@ -132,10 +132,10 @@ main {
     display: block;
     width: 100%;
     height: 100%;
-    touch-action: none; /* Prevent browser handling of multi-touch gestures */
+    touch-action: none;
 }
 
-/* Details panel (right or bottom) */
+/* Details panel (right) */
 #details-panel {
     flex: 0.8;
     min-width: 30%;
@@ -262,33 +262,8 @@ main {
 .chart-wrapper {
     position: relative;
     width: 100%;
-    height: calc(100% - 25px); /* Adjust for summary height */
+    height: calc(100% - 25px);
     margin-top: 5px;
-}
-
-/* Chart toggle button for mobile */
-.chart-toggle-btn {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background-color: rgba(25, 25, 50, 0.8);
-    border: 1px solid var(--synthwave-purple);
-    color: var(--synthwave-cyan);
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    z-index: 10;
-    transition: all 0.2s ease;
-}
-
-.chart-toggle-btn:hover {
-    background-color: var(--synthwave-blue);
-    box-shadow: 0 0 10px var(--synthwave-purple);
-}
-
-.chart-expanded {
-    transition: height 0.3s ease;
 }
 
 footer {
@@ -345,213 +320,6 @@ footer a:hover {
     to { box-shadow: 0 0 15px var(--matrix-green), 0 0 20px var(--matrix-green); }
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .split-container {
-        flex-direction: column;
-        height: calc(100% - 140px); /* Keep original value for mobile */
-    }
-    
-    #matrix-panel {
-        height: 50%;
-        min-width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--synthwave-purple);
-    }
-    
-    #details-panel {
-        flex: 1;
-        height: 50%;
-        min-width: 100%;
-        max-width: 100%;
-        border-left: none;
-        border-top: 1px solid var(--synthwave-purple);
-    }
-    
-    #chart-container {
-        height: 140px;
-        padding-top: 25px;
-    }
-    
-    .chart-toggle-btn {
-        display: block;
-    }
-    
-    /* Expanded chart state */
-    #chart-container.expanded {
-        height: 240px;
-    }
-    
-    header {
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    
-    .header-left h1 {
-        font-size: 1.2rem;
-    }
-    
-    #connection-status, #latest-block {
-        font-size: 0.8rem;
-    }
-    
-    main {
-        height: calc(100vh - 110px); /* Keep original value for mobile */
-    }
-    
-    .details-row {
-        font-size: 0.8rem;
-    }
-    
-    .details-row .label {
-        flex: 0 0 50px;
-    }
-    
-    footer {
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .split-container {
-        height: calc(100% - 130px);
-    }
-    
-    #chart-container {
-        height: 130px;
-    }
-    
-    #chart-container.expanded {
-        height: 200px;
-    }
-    
-    #chart-summary {
-        font-size: 0.8rem;
-        padding: 2px 6px;
-        right: 10px;
-    }
-    
-    .header-left h1 {
-        font-size: 1.2rem;
-    }
-    
-    .header-controls {
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    
-    #connection-status, #latest-block {
-        font-size: 0.7rem;
-    }
-    
-    main {
-        height: calc(100vh - 100px);
-    }
-    
-    .details-header h2 {
-        font-size: 1.1rem;
-    }
-    
-    .select-tx-prompt {
-        font-size: 0.8rem;
-    }
-    
-    .details-row {
-        font-size: 0.75rem;
-        margin-bottom: 8px;
-    }
-    
-    .details-row .label {
-        flex: 0 0 40px;
-    }
-    
-    .details-link a {
-        font-size: 0.8rem;
-        padding: 6px 10px;
-    }
-    
-    footer {
-        padding: 0.3rem 0;
-        font-size: 0.7rem;
-    }
-    
-    .clear-details-btn {
-        padding: 6px 10px;
-        font-size: 0.8rem;
-    }
-}
-
-/* iPhone SE and other very small screens */
-@media (max-width: 375px) {
-    .header-left h1 {
-        font-size: 1rem;
-    }
-    
-    .header-controls {
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    
-    #connection-status, #latest-block {
-        padding: 0.3rem 0.5rem;
-        font-size: 0.8rem;
-    }
-    
-    #chart-container {
-        height: 120px;
-        padding: 5px;
-        padding-top: 25px;
-    }
-    
-    #chart-container.expanded {
-        height: 180px;
-    }
-    
-    #chart-summary {
-        font-size: 0.7rem;
-        padding: 2px 5px;
-        right: 5px;
-    }
-    
-    .chart-toggle-btn {
-        font-size: 0.7rem;
-        padding: 2px 5px;
-        left: 5px;
-    }
-    
-    main {
-        height: calc(100vh - 90px);
-    }
-    
-    #matrix-panel {
-        height: 40%;
-    }
-    
-    #details-panel {
-        height: 60%;
-        padding: 10px;
-    }
-}
-
-.clear-details-btn {
-    align-self: center;
-    margin-top: 20px;
-    padding: 8px 15px;
-    background-color: rgba(25, 25, 50, 0.7);
-    border: 1px solid var(--synthwave-purple);
-    border-radius: 4px;
-    color: var(--synthwave-cyan);
-    font-family: var(--terminal-font);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-shadow: 0 0 5px var(--synthwave-cyan);
-}
-
-.clear-details-btn:hover {
-    background-color: var(--synthwave-blue);
-    box-shadow: 0 0 15px var(--synthwave-pink);
-}
-
 /* Main content area */
 .content {
     display: flex;
@@ -561,56 +329,27 @@ footer a:hover {
 }
 
 /* Desktop split layout */
-@media (min-width: 769px) {
-    .main-content-wrapper {
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        height: 70vh; /* Fixed height to allow space for chart */
-    }
-    
-    .visualization-section {
-        width: 65%;
-        height: 100%;
-    }
-    
-    .details-section {
-        width: 35%;
-        height: 100%;
-    }
-    
-    /* Chart takes the remaining space below the main content */
-    .volume-section {
-        height: calc(30vh - 2rem); /* Allocate remaining viewport height minus margins */
-        margin-top: 1rem;
-    }
+.main-content-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    height: 70vh;
 }
 
-/* Mobile layout */
-@media (max-width: 768px) {
-    .main-content-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        height: 75vh; /* Fixed height to allow space for chart on mobile */
-    }
-    
-    .visualization-section {
-        width: 100%;
-        height: 60%;
-    }
-    
-    .details-section {
-        width: 100%;
-        height: 40%;
-        overflow: hidden;
-    }
-    
-    /* Chart takes the remaining space below the main content */
-    .volume-section {
-        height: calc(25vh - 1.5rem); /* Allocate remaining viewport height minus margins */
-        margin-top: 0.5rem;
-    }
+.visualization-section {
+    width: 65%;
+    height: 100%;
+}
+
+.details-section {
+    width: 35%;
+    height: 100%;
+}
+
+/* Chart takes the remaining space below the main content */
+.volume-section {
+    height: calc(30vh - 2rem);
+    margin-top: 1rem;
 }
 
 /* Matrix visualization container */
@@ -637,13 +376,6 @@ footer a:hover {
     overflow: hidden;
 }
 
-/* For mobile, adjust padding of details panel */
-@media (max-width: 768px) {
-    #details-panel {
-        padding: 0.5rem;
-    }
-}
-
 /* Volume and chart section */
 .volume-section {
     display: flex;
@@ -654,7 +386,7 @@ footer a:hover {
 
 #chart-container {
     width: 100%;
-    height: calc(100% - 2rem); /* Subtract header height and margins */
+    height: calc(100% - 2rem);
     background-color: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(80, 250, 255, 0.3);
     border-radius: 5px;
@@ -668,58 +400,6 @@ footer a:hover {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-}
-
-/* For very small screens, make everything more compact */
-@media (max-width: 480px) {
-    .main-content-wrapper {
-        height: 70vh;
-    }
-    
-    .visualization-section {
-        height: 55%;
-    }
-    
-    .details-section {
-        height: 45%;
-    }
-    
-    .volume-section {
-        height: calc(30vh - 1rem);
-    }
-    
-    .content {
-        gap: 0.5rem;
-    }
-    
-    #details-panel {
-        padding: 0.4rem;
-    }
-    
-    .panel-title {
-        font-size: 0.9rem;
-        margin-bottom: 0.3rem;
-    }
-    
-    .detail-row {
-        font-size: 0.75rem;
-        margin-bottom: 0.2rem;
-    }
-    
-    .detail-label {
-        width: 60px;
-    }
-}
-
-/* Compact layout for small heights */
-@media (max-height: 600px) {
-    .main-content-wrapper {
-        height: 65vh;
-    }
-    
-    .volume-section {
-        height: calc(35vh - 1rem);
-    }
 }
 
 /* Etherscan link styling */
@@ -740,46 +420,9 @@ footer a:hover {
     background: rgba(191, 85, 255, 0.4);
 }
 
-/* Chart toggle button for mobile */
-.chart-toggle-btn, .clear-details-btn {
-    background: rgba(80, 250, 255, 0.2);
-    border: 1px solid rgba(80, 250, 255, 0.5);
-    border-radius: 3px;
-    color: rgba(80, 250, 255, 1);
-    padding: 0.3rem 0.6rem;
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.chart-toggle-btn:hover, .clear-details-btn:hover {
-    background: rgba(80, 250, 255, 0.4);
-}
-
 /* Hide elements */
 .hidden {
     display: none !important;
-}
-
-/* Compact layout for single-screen mobile view */
-@media (max-height: 700px) and (max-width: 768px) {
-    #matrix-container {
-        height: 45vh;
-    }
-    
-    #details-panel {
-        max-height: 25vh;
-        overflow-y: auto;
-    }
-    
-    #chart-container:not(.hidden) {
-        height: 20vh;
-    }
-    
-    .detail-row {
-        margin-bottom: 0.2rem;
-    }
 }
 
 /* Volume header and title */

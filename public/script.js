@@ -19,15 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartCanvas = document.getElementById('value-chart');
     const chartCtx = chartCanvas.getContext('2d');
     
-    // Detect if mobile
-    const isMobile = window.innerWidth <= 768;
-    // For very small screens, use simplified rendering
-    const isVerySmallScreen = window.innerWidth <= 480;
-    
     // Matrix settings
     let txDots = [];
-    let cubeSize = isMobile ? 8 : 12; // Size for cubes (slightly smaller than diamonds)
-    let dotSpacing = isMobile ? 30 : 40; // Increased spacing between cubes
+    let cubeSize = 12; // Size for cubes
+    let dotSpacing = 40; // Spacing between cubes
     let activeTransaction = null;
     // Canvas clearing opacity (complete clear for no trails)
     const CANVAS_FADE_OPACITY = 1.0; // Full opacity for complete clear each frame
@@ -86,16 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
-        // Adjust cube size and spacing based on screen size
-        cubeSize = isMobile ? 8 : 12;
-        dotSpacing = isMobile ? 30 : 40;
-        
-        // For very small screens
-        if (window.innerWidth <= 480) {
-            cubeSize = 6;
-            dotSpacing = 20;
-        }
-        
         // Initialize empty txDots array
         txDots = [];
     }
@@ -119,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             maxRotation: 0,
                             autoSkip: true,
-                            maxTicksLimit: window.innerWidth <= 768 ? 5 : 10 // Fewer labels on mobile
+                            maxTicksLimit: 10
                         },
                         grid: { color: 'rgba(80, 250, 255, 0.15)' }
                     },
@@ -141,10 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: {
                         labels: { 
                             color: 'rgba(80, 250, 255, 1)', // Neon cyan
-                            boxWidth: window.innerWidth <= 768 ? 10 : 40, // Smaller legend on mobile
-                            padding: window.innerWidth <= 480 ? 5 : 10 // Smaller padding on mobile
+                            boxWidth: 40,
+                            padding: 10
                         },
-                        display: window.innerWidth > 480 ? true : false // Hide legend on very small screens
+                        display: true
                     },
                     tooltip: {
                         backgroundColor: 'rgba(25, 25, 50, 0.9)', // Dark blue
@@ -175,59 +160,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 animation: {
-                    duration: isMobile ? 500 : 1000 // Faster animations on mobile
+                    duration: 1000
                 }
             }
         });
     }
     
-    // Add chart setup for the transaction explorer
+    // Add chart setup
     function setupChartAndUI() {
-        if (isMobile) {
-            // We no longer need to add a toggle button as the chart will always be visible
-            
-            // Initialize chart with mobile-optimized settings
-            setTimeout(() => {
-                if (valueChart) {
-                    valueChart.resize();
-                }
-            }, 100);
-            
-            // Ensure proper display on mobile
-            const matrixContainer = document.getElementById('matrix-container');
-            const detailsSection = document.querySelector('.details-section');
-            
-            // Make sure chart is properly sized
-            setTimeout(() => {
-                if (valueChart) valueChart.resize();
-            }, 300);
-        }
+        // Make sure chart is properly sized
+        setTimeout(() => {
+            if (valueChart) {
+                valueChart.resize();
+            }
+        }, 100);
     }
     
     // Handle window resize
     window.addEventListener('resize', () => {
-        // Update mobile detection
-        const wasMobile = isMobile;
-        const newIsMobile = window.innerWidth <= 768;
-        const newIsVerySmallScreen = window.innerWidth <= 480;
+        // Update canvas dimensions
+        initCanvas();
         
-        // Only reinitialize if mobile status changed
-        if (wasMobile !== newIsMobile) {
-            location.reload(); // Simplest way to handle major layout change
-        } else {
-            // Update canvas dimensions
-            initCanvas();
+        // Reinitialize chart
+        if (valueChart) {
+            valueChart.destroy();
+            initChart();
             
-            // Reinitialize chart
-            if (valueChart) {
-                valueChart.destroy();
-                initChart();
-                
-                // Make sure chart is properly sized
-                setTimeout(() => {
-                    valueChart.resize();
-                }, 100);
-            }
+            // Make sure chart is properly sized
+            setTimeout(() => {
+                valueChart.resize();
+            }, 100);
         }
     });
     
@@ -353,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Convert block number to a value between 0.85 and 1.15 for 30% variation between blocks
         const blockFactor = blockNumber ? (0.85 + (blockNumber % 10) * 0.03) : 1.0;
         
-        // Base speed varies by value and is affected by mobile status
+        // Base speed varies by value
         let speed;
         if (!value || value === 0) {
             speed = 3.0 * baseSpeedFactor;
         } else {
-            const baseSpeed = isMobile ? 2.0 * baseSpeedFactor : 3.0 * baseSpeedFactor;
+            const baseSpeed = 3.0 * baseSpeedFactor;
             // Value still affects speed but to a lesser degree
             const valueSpeedFactor = Math.max(0.7, 1 - Math.log10(value + 1) / 10); // Reduced value impact
             speed = baseSpeed * valueSpeedFactor;
@@ -468,15 +430,15 @@ document.addEventListener('DOMContentLoaded', () => {
             chartData.labels.push(`Block ${blockNumber}`);
             chartData.datasets[0].data.push(totalValue);
             
-            // Keep only last n data points (or fewer on mobile)
-            const maxDataPoints = isVerySmallScreen ? 8 : (isMobile ? 12 : 20);
+            // Keep only last n data points
+            const maxDataPoints = 20;
             if (chartData.labels.length > maxDataPoints) {
                 chartData.labels.shift();
                 chartData.datasets[0].data.shift();
             }
         }
         
-        // Always update the chart since it's always visible now
+        // Always update the chart
         valueChart.update();
         
         // Always update total volume display
@@ -527,11 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillStyle = `rgba(0, 0, 0, ${CANVAS_FADE_OPACITY})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // For mobile devices, periodically limit the number of dots for performance
-        if (isMobile && txDots.length > (isVerySmallScreen ? 30 : 50)) {
-            txDots = txDots.slice(0, isVerySmallScreen ? 30 : 50);
-        }
-        
         // Draw each transaction cube
         txDots.forEach((dot, index) => {
             // Move cube leftward (from right to left)
@@ -575,19 +532,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.restore();
             
             // Second pass - inner glow (smaller, more intense)
-            // Skip second glow pass on very small screens for performance
-            if (!isVerySmallScreen) {
-                ctx.save();
-                ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
-                ctx.shadowBlur = glowSize * 0.8;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
-                
-                // Redraw the cube for the inner glow (slightly smaller)
-                drawCube(ctx, dot.x, dot.y, size * 0.95, color, opacity, dot.rotationX, dot.rotationY, dot.rotationZ);
-                
-                ctx.restore();
-            }
+            ctx.save();
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
+            ctx.shadowBlur = glowSize * 0.8;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Redraw the cube for the inner glow (slightly smaller)
+            drawCube(ctx, dot.x, dot.y, size * 0.95, color, opacity, dot.rotationX, dot.rotationY, dot.rotationZ);
+            
+            ctx.restore();
             
             // If this cube is active or in the same block as the active transaction,
             // display the block number above it
@@ -605,20 +559,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillText(`#${dot.blockNumber}`, dot.x, dot.y - cubeSize * 2);
                 ctx.restore();
                 
-                // Draw connecting lines only on non-small screens for performance
-                if (isActive && !isVerySmallScreen) {
-                    txDots.forEach(otherDot => {
-                        if (otherDot.hash !== dot.hash && otherDot.blockNumber === dot.blockNumber) {
-                            // Draw a faint connecting line
-                            ctx.beginPath();
-                            ctx.moveTo(dot.x, dot.y);
-                            ctx.lineTo(otherDot.x, otherDot.y);
-                            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`;
-                            ctx.lineWidth = 1;
-                            ctx.stroke();
-                        }
-                    });
-                }
+                // Draw connecting lines
+                txDots.forEach(otherDot => {
+                    if (otherDot.hash !== dot.hash && otherDot.blockNumber === dot.blockNumber) {
+                        // Draw a faint connecting line
+                        ctx.beginPath();
+                        ctx.moveTo(dot.x, dot.y);
+                        ctx.lineTo(otherDot.x, otherDot.y);
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                });
             }
             
             // Remove cubes that have moved off-screen to the left
@@ -650,122 +602,82 @@ document.addEventListener('DOMContentLoaded', () => {
             b: Math.max(0, color.b - 50)
         };
         
-        // For very small screens or low-performance devices, use simplified cubes (fewer faces)
-        if (isVerySmallScreen) {
-            // Simplified cube - just draw 3 faces for better performance
-            // Use 2D rotation for simpler rendering
-            ctx.rotate(rotationZ);
+        // Full 3D cube
+        // Define the vertices of a cube
+        // Centered at origin for easier rotation
+        const vertices = [
+            { x: -size, y: -size, z: -size }, // 0: back-top-left
+            { x: size, y: -size, z: -size },  // 1: back-top-right
+            { x: size, y: size, z: -size },   // 2: back-bottom-right
+            { x: -size, y: size, z: -size },  // 3: back-bottom-left
+            { x: -size, y: -size, z: size },  // 4: front-top-left
+            { x: size, y: -size, z: size },   // 5: front-top-right
+            { x: size, y: size, z: size },    // 6: front-bottom-right
+            { x: -size, y: size, z: size }    // 7: front-bottom-left
+        ];
+        
+        // Apply 3D rotation to vertices
+        const rotatedVertices = vertices.map(v => {
+            // Apply X rotation
+            let y1 = v.y * Math.cos(rotationX) - v.z * Math.sin(rotationX);
+            let z1 = v.y * Math.sin(rotationX) + v.z * Math.cos(rotationX);
             
-            // Draw a simplified cube (3 visible faces maximum)
-            // Front face (always visible)
+            // Apply Y rotation
+            let x2 = v.x * Math.cos(rotationY) + z1 * Math.sin(rotationY);
+            let z2 = -v.x * Math.sin(rotationY) + z1 * Math.cos(rotationY);
+            
+            // Apply Z rotation
+            let x3 = x2 * Math.cos(rotationZ) - y1 * Math.sin(rotationZ);
+            let y3 = x2 * Math.sin(rotationZ) + y1 * Math.cos(rotationZ);
+            
+            return { x: x3, y: y3, z: z2 };
+        });
+        
+        // Define the faces of the cube (vertex indices)
+        const faces = [
+            { indices: [0, 1, 2, 3], color: darkColor },    // Back face
+            { indices: [4, 5, 6, 7], color: color },        // Front face
+            { indices: [0, 4, 7, 3], color: darkColor },    // Left face
+            { indices: [1, 5, 6, 2], color: brightColor },  // Right face
+            { indices: [0, 1, 5, 4], color: brightColor },  // Top face
+            { indices: [3, 2, 6, 7], color: darkColor }     // Bottom face
+        ];
+        
+        // Calculate depth for each face to determine drawing order (painter's algorithm)
+        const faceDepths = faces.map((face, i) => {
+            // Calculate center point of the face as average of its vertices
+            const centerZ = face.indices.reduce((sum, index) => sum + rotatedVertices[index].z, 0) / face.indices.length;
+            return { index: i, z: centerZ };
+        });
+        
+        // Sort faces by depth (back to front)
+        faceDepths.sort((a, b) => a.z - b.z);
+        
+        // Draw faces in sorted order
+        faceDepths.forEach(fd => {
+            const face = faces[fd.index];
+            
+            // Draw a face
             ctx.beginPath();
-            ctx.rect(-size, -size, size * 2, size * 2);
-            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+            for (let i = 0; i < face.indices.length; i++) {
+                const vertex = rotatedVertices[face.indices[i]];
+                if (i === 0) {
+                    ctx.moveTo(vertex.x, vertex.y);
+                } else {
+                    ctx.lineTo(vertex.x, vertex.y);
+                }
+            }
+            ctx.closePath();
+            
+            // Fill with appropriate color
+            ctx.fillStyle = `rgba(${face.color.r}, ${face.color.g}, ${face.color.b}, ${opacity})`;
             ctx.fill();
+            
+            // Add stroke for edge definition
             ctx.strokeStyle = `rgba(${Math.min(255, color.r + 120)}, ${Math.min(255, color.g + 120)}, ${Math.min(255, color.b + 120)}, ${opacity})`;
             ctx.lineWidth = 1;
             ctx.stroke();
-            
-            // Add some 3D effect with simple lines
-            ctx.beginPath();
-            ctx.moveTo(-size, -size);
-            ctx.lineTo(-size * 0.7, -size * 0.7);
-            ctx.moveTo(size, -size);
-            ctx.lineTo(size * 0.7, -size * 0.7);
-            ctx.moveTo(size, size);
-            ctx.lineTo(size * 0.7, size * 0.7);
-            ctx.moveTo(-size, size);
-            ctx.lineTo(-size * 0.7, size * 0.7);
-            ctx.stroke();
-            
-            // Top face
-            ctx.beginPath();
-            ctx.moveTo(-size * 0.7, -size * 0.7);
-            ctx.lineTo(size * 0.7, -size * 0.7);
-            ctx.lineTo(size * 0.7, size * 0.7);
-            ctx.lineTo(-size * 0.7, size * 0.7);
-            ctx.closePath();
-            ctx.fillStyle = `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, ${opacity * 0.9})`;
-            ctx.fill();
-            ctx.stroke();
-        } else {
-            // Full 3D cube for better hardware
-            // Define the vertices of a cube
-            // Centered at origin for easier rotation
-            const vertices = [
-                { x: -size, y: -size, z: -size }, // 0: back-top-left
-                { x: size, y: -size, z: -size },  // 1: back-top-right
-                { x: size, y: size, z: -size },   // 2: back-bottom-right
-                { x: -size, y: size, z: -size },  // 3: back-bottom-left
-                { x: -size, y: -size, z: size },  // 4: front-top-left
-                { x: size, y: -size, z: size },   // 5: front-top-right
-                { x: size, y: size, z: size },    // 6: front-bottom-right
-                { x: -size, y: size, z: size }    // 7: front-bottom-left
-            ];
-            
-            // Apply 3D rotation to vertices
-            const rotatedVertices = vertices.map(v => {
-                // Apply X rotation
-                let y1 = v.y * Math.cos(rotationX) - v.z * Math.sin(rotationX);
-                let z1 = v.y * Math.sin(rotationX) + v.z * Math.cos(rotationX);
-                
-                // Apply Y rotation
-                let x2 = v.x * Math.cos(rotationY) + z1 * Math.sin(rotationY);
-                let z2 = -v.x * Math.sin(rotationY) + z1 * Math.cos(rotationY);
-                
-                // Apply Z rotation
-                let x3 = x2 * Math.cos(rotationZ) - y1 * Math.sin(rotationZ);
-                let y3 = x2 * Math.sin(rotationZ) + y1 * Math.cos(rotationZ);
-                
-                return { x: x3, y: y3, z: z2 };
-            });
-            
-            // Define the faces of the cube (vertex indices)
-            const faces = [
-                { indices: [0, 1, 2, 3], color: darkColor },    // Back face
-                { indices: [4, 5, 6, 7], color: color },        // Front face
-                { indices: [0, 4, 7, 3], color: darkColor },    // Left face
-                { indices: [1, 5, 6, 2], color: brightColor },  // Right face
-                { indices: [0, 1, 5, 4], color: brightColor },  // Top face
-                { indices: [3, 2, 6, 7], color: darkColor }     // Bottom face
-            ];
-            
-            // Calculate depth for each face to determine drawing order (painter's algorithm)
-            const faceDepths = faces.map((face, i) => {
-                // Calculate center point of the face as average of its vertices
-                const centerZ = face.indices.reduce((sum, index) => sum + rotatedVertices[index].z, 0) / face.indices.length;
-                return { index: i, z: centerZ };
-            });
-            
-            // Sort faces by depth (back to front)
-            faceDepths.sort((a, b) => a.z - b.z);
-            
-            // Draw faces in sorted order
-            faceDepths.forEach(fd => {
-                const face = faces[fd.index];
-                
-                // Draw a face
-                ctx.beginPath();
-                for (let i = 0; i < face.indices.length; i++) {
-                    const vertex = rotatedVertices[face.indices[i]];
-                    if (i === 0) {
-                        ctx.moveTo(vertex.x, vertex.y);
-                    } else {
-                        ctx.lineTo(vertex.x, vertex.y);
-                    }
-                }
-                ctx.closePath();
-                
-                // Fill with appropriate color
-                ctx.fillStyle = `rgba(${face.color.r}, ${face.color.g}, ${face.color.b}, ${opacity})`;
-                ctx.fill();
-                
-                // Add stroke for edge definition
-                ctx.strokeStyle = `rgba(${Math.min(255, color.r + 120)}, ${Math.min(255, color.g + 120)}, ${Math.min(255, color.b + 120)}, ${opacity})`;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            });
-        }
+        });
         
         ctx.restore();
     }
@@ -791,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return closestDot ? closestDot.tx : null;
     }
     
-    // Handle mouse/touch interaction with transactions
+    // Handle mouse interaction with transactions
     function handleInteraction(clientX, clientY) {
         // Convert client coordinates to canvas coordinates
         const rect = canvas.getBoundingClientRect();
@@ -812,10 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Handle mouse exit from canvas
     function handleMouseExit() {
-        // On desktop, hide details when mouse leaves
-        if (!isMobile) {
-            hideTransactionDetails();
-        }
+        hideTransactionDetails();
     }
     
     // Mouse event handlers
@@ -826,32 +735,6 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseleave', () => {
         handleMouseExit();
     });
-    
-    // Touch event handlers for mobile
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Prevent scrolling when touching the canvas
-        if (e.touches.length > 0) {
-            const touch = e.touches[0];
-            handleInteraction(touch.clientX, touch.clientY);
-        }
-    }, { passive: false });
-    
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault(); // Prevent scrolling when touching the canvas
-        if (e.touches.length > 0) {
-            const touch = e.touches[0];
-            handleInteraction(touch.clientX, touch.clientY);
-        }
-    }, { passive: false });
-    
-    // Add a button to clear details on mobile
-    if (isMobile) {
-        const clearButton = document.createElement('button');
-        clearButton.textContent = 'Hide Details';
-        clearButton.className = 'clear-details-btn';
-        clearButton.addEventListener('click', hideTransactionDetails);
-        detailsPanel.appendChild(clearButton);
-    }
     
     // Show transaction details in the details panel
     function showTransactionDetails(tx) {
@@ -880,19 +763,10 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryColor = 'rgba(80, 250, 255, 1)'; // Neon cyan
         }
         
-        // Truncate addresses for mobile
-        const truncateAddress = (address, length = 12) => {
-            if (!address) return '';
-            if (window.innerWidth <= 480 && address.length > length * 2) {
-                return `${address.substring(0, length)}...${address.substring(address.length - length)}`;
-            }
-            return address;
-        };
-        
         // Update details content
-        detailHash.textContent = truncateAddress(tx.hash);
-        detailFrom.textContent = truncateAddress(tx.from);
-        detailTo.textContent = truncateAddress(tx.to || 'Contract Creation');
+        detailHash.textContent = tx.hash;
+        detailFrom.textContent = tx.from;
+        detailTo.textContent = tx.to || 'Contract Creation';
         detailValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
         detailBlock.textContent = tx.blockNumber;
         
@@ -909,25 +783,11 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTransaction = null;
     }
     
-    // When initializing for mobile, limit the number of transactions for better performance
-    function initMobile() {
-        // Keep fewer dots on screen for better performance on mobile
-        if (isMobile) {
-            const maxDots = isVerySmallScreen ? 30 : 50;
-            if (txDots.length > maxDots) {
-                txDots = txDots.slice(0, maxDots);
-            }
-        }
-    }
-    
     // Initialize everything
     function init() {
         initCanvas();
         initChart();
         setupChartAndUI();
-        if (isMobile) {
-            initMobile();
-        }
         drawMatrix();
     }
     

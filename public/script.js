@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Matrix settings
     let txDots = [];
-    let cubeSize = isMobile ? 10 : 12; // Size for cubes - smaller on mobile
-    let dotSpacing = isMobile ? 30 : 40; // Spacing between cubes
+    let cubeSize = isMobile ? 8 : 12; // Size for cubes - even smaller on mobile
+    let dotSpacing = isMobile ? 25 : 40; // Reduced spacing on mobile
     let activeTransaction = null;
     // Canvas clearing opacity (complete clear for no trails)
     const CANVAS_FADE_OPACITY = 1.0; // Full opacity for complete clear each frame
@@ -90,8 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.height = canvas.parentElement.clientHeight;
         
         // Adjust cube size based on screen size
-        cubeSize = isMobile ? (isVerySmallScreen ? 8 : 10) : 12;
-        dotSpacing = isMobile ? 30 : 40;
+        cubeSize = isMobile ? (isVerySmallScreen ? 6 : 8) : 12;
+        dotSpacing = isMobile ? (isVerySmallScreen ? 20 : 25) : 40;
         
         // Initialize empty txDots array
         txDots = [];
@@ -580,8 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // For mobile devices, limit the number of dots for better performance
-        if (isMobile && txDots.length > (isVerySmallScreen ? 30 : 50)) {
-            txDots = txDots.slice(0, isVerySmallScreen ? 30 : 50);
+        if (isMobile && txDots.length > (isVerySmallScreen ? 20 : 35)) {
+            txDots = txDots.slice(0, isVerySmallScreen ? 20 : 35);
         }
         
         // Array to track dots that are off-screen

@@ -546,11 +546,12 @@ footer a:hover {
         width: 100%;
         height: 40%;
         padding-bottom: 0; /* Remove any padding that might cause space */
+        margin-bottom: 0; /* Remove any margin that might cause space */
     }
     
     /* Line chart takes 20% of screen */
     .volume-section {
-        height: 100%;
+        height: 20%;
         margin-top: 0;
         padding-bottom: 0; /* Remove any padding that might cause space */
     }
@@ -565,7 +566,7 @@ footer a:hover {
     
     /* Compact chart for mobile */
     #chart-container {
-        height: 20%;
+        height: 100%;
         padding: 0.3rem;
         margin-bottom: 0; /* Remove any margin that might cause space */
     }

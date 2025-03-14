@@ -874,6 +874,22 @@ document.addEventListener('DOMContentLoaded', () => {
         handleMouseExit();
     });
     
+    // Add double-click handler for desktop
+    canvas.addEventListener('dblclick', (e) => {
+        // Convert client coordinates to canvas coordinates
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+        
+        // Find the nearest transaction
+        const transaction = findNearestDot(canvasX, canvasY);
+        
+        // If a transaction is found, open Etherscan link
+        if (transaction && !isMobile) {
+            window.open(`https://etherscan.io/tx/${transaction.hash}`, '_blank');
+        }
+    });
+    
     // Touch event handlers for mobile
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault(); // Prevent scrolling when touching the canvas
@@ -942,7 +958,12 @@ document.addEventListener('DOMContentLoaded', () => {
         detailValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
         detailBlock.textContent = tx.blockNumber;
         
-        // Update Etherscan link
+        // Add a hint for desktop users about double-clicking
+        if (!isMobile) {
+            detailHash.innerHTML = `${truncateAddress(tx.hash)} <span style="font-size:0.7em;opacity:0.7;font-style:italic;margin-left:5px;">(Double-click to view on Etherscan)</span>`;
+        }
+        
+        // Update Etherscan link (visible only on mobile)
         etherscanLink.href = `https://etherscan.io/tx/${tx.hash}`;
         
         // Show the details

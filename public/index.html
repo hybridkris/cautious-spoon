@@ -18,16 +18,52 @@
             <div class="header-controls">
                 <div id="connection-status"><i class="fas fa-circle"></i> Connecting...</div>
                 <div id="latest-block">Latest Block: Waiting...</div>
+                <!-- Chart toggle button will be added here by JavaScript for mobile -->
             </div>
         </header>
 
         <div class="content">
-            <!-- Matrix visualization -->
-            <div id="matrix-container">
-                <canvas id="matrix-canvas"></canvas>
+            <!-- Main content with split layout -->
+            <div class="main-content-wrapper">
+                <!-- Left side: Matrix visualization (65% on desktop) -->
+                <div class="visualization-section">
+                    <div id="matrix-container">
+                        <canvas id="matrix-canvas"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Right side: Transaction details (35% on desktop) -->
+                <div class="details-section">
+                    <div id="details-panel">
+                        <h3 class="panel-title">Transaction Details</h3>
+                        <div id="tx-details" class="hidden">
+                            <div class="detail-row">
+                                <span class="detail-label">Block:</span>
+                                <span id="detail-block" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Hash:</span>
+                                <span id="detail-hash" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">From:</span>
+                                <span id="detail-from" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">To:</span>
+                                <span id="detail-to" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Value:</span>
+                                <span id="detail-value" class="detail-value"></span>
+                            </div>
+                            <a id="etherscan-link" href="#" target="_blank">View on Etherscan <i class="fas fa-external-link-alt"></i></a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Volume and chart section -->
+            <!-- Volume and chart section (always at bottom) -->
             <div class="volume-section">
                 <div class="volume-header">
                     <h2 class="volume-title">Transaction Volume (ETH)</h2>
@@ -35,34 +71,6 @@
                 </div>
                 <div id="chart-container">
                     <canvas id="value-chart"></canvas>
-                </div>
-            </div>
-
-            <!-- Transaction details panel -->
-            <div id="details-panel">
-                <h3 class="panel-title">Transaction Details</h3>
-                <div id="tx-details" class="hidden">
-                    <div class="detail-row">
-                        <span class="detail-label">Block:</span>
-                        <span id="detail-block" class="detail-value"></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Hash:</span>
-                        <span id="detail-hash" class="detail-value"></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">From:</span>
-                        <span id="detail-from" class="detail-value"></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">To:</span>
-                        <span id="detail-to" class="detail-value"></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Value:</span>
-                        <span id="detail-value" class="detail-value"></span>
-                    </div>
-                    <a id="etherscan-link" href="#" target="_blank">View on Etherscan <i class="fas fa-external-link-alt"></i></a>
                 </div>
             </div>
         </div>

@@ -10,16 +10,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const tooltipTo = document.getElementById('tooltip-to');
     const tooltipValue = document.getElementById('tooltip-value');
     const tooltipBlock = document.getElementById('tooltip-block');
+    const totalVolumeElement = document.getElementById('total-volume');
     
     // Chart setup
     const chartCanvas = document.getElementById('value-chart');
     const chartCtx = chartCanvas.getContext('2d');
     
+    // Detect if mobile
+    const isMobile = window.innerWidth <= 768;
+    
     // Matrix settings
     let matrixChars = [];
     const possibleChars = '0123456789ABCDEFabcdef'; // Hex characters for Ethereum addresses
     let columns = 0;
-    let fontSize = 14;
+    let fontSize = isMobile ? 12 : 14; // Smaller font on mobile
+    let columnWidth = isMobile ? 15 : 20; // Smaller column width on mobile
     let activeTransaction = null;
     
     // Transaction data
@@ -38,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartData = {
         labels: [],
         datasets: [{
-            label: 'Transaction Value (ETH)',
+            label: 'Total Block Value (ETH)',
             data: [],
             borderColor: 'rgba(0, 255, 65, 1)',
             backgroundColor: 'rgba(0, 255, 65, 0.1)',
@@ -48,16 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
             segment: {
                 borderColor: function(context) {
                     const value = context.p1.parsed.y;
-                    if (value >= 100) return 'rgba(255, 0, 0, 1)';       // Red
-                    if (value >= 10) return 'rgba(255, 165, 0, 1)';      // Orange
-                    if (value >= 1) return 'rgba(255, 255, 0, 1)';       // Yellow
+                    if (value >= 1000) return 'rgba(255, 0, 0, 1)';      // Red
+                    if (value >= 100) return 'rgba(255, 165, 0, 1)';     // Orange
+                    if (value >= 10) return 'rgba(255, 255, 0, 1)';      // Yellow
                     return 'rgba(0, 255, 65, 1)';                        // Green
                 },
                 backgroundColor: function(context) {
                     const value = context.p1.parsed.y;
-                    if (value >= 100) return 'rgba(255, 0, 0, 0.1)';     // Red
-                    if (value >= 10) return 'rgba(255, 165, 0, 0.1)';    // Orange
-                    if (value >= 1) return 'rgba(255, 255, 0, 0.1)';     // Yellow
+                    if (value >= 1000) return 'rgba(255, 0, 0, 0.1)';    // Red
+                    if (value >= 100) return 'rgba(255, 165, 0, 0.1)';   // Orange
+                    if (value >= 10) return 'rgba(255, 255, 0, 0.1)';    // Yellow
                     return 'rgba(0, 255, 65, 0.1)';                      // Green
                 }
             }
@@ -67,14 +72,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Chart instance
     let valueChart = null;
     
+    // Keep track of blocks we've already processed
+    let processedBlocks = new Set();
+    
     // Initialize the Matrix canvas
     function initCanvas() {
         // Set canvas dimensions
         canvas.width = window.innerWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
-        // Calculate columns (one falling stream every 20px)
-        columns = Math.floor(canvas.width / 20);
+        // Determine column width based on screen size
+        columnWidth = window.innerWidth <= 768 ? 15 : 20;
+        fontSize = window.innerWidth <= 768 ? 12 : 14;
+        
+        // For very small screens
+        if (window.innerWidth <= 480) {
+            columnWidth = 12;
+            fontSize = 10;
+        }
+        
+        // Calculate columns (one falling stream every columnWidth px)
+        columns = Math.floor(canvas.width / columnWidth);
         
         // Initialize empty matrix characters
         matrixChars = [];
@@ -107,18 +125,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { color: '#00ff41' },
+                        ticks: { 
+                            color: '#00ff41',
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: window.innerWidth <= 768 ? 5 : 10 // Fewer labels on mobile
+                        },
                         grid: { color: 'rgba(0, 255, 65, 0.1)' }
                     },
                     y: {
                         beginAtZero: true,
-                        ticks: { color: '#00ff41' },
+                        ticks: { 
+                            color: '#00ff41',
+                            callback: function(value) {
+                                // Format large numbers with K (thousands) or M (millions)
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+                                return value;
+                            }
+                        },
                         grid: { color: 'rgba(0, 255, 65, 0.1)' }
                     }
                 },
                 plugins: {
                     legend: {
-                        labels: { color: '#00ff41' }
+                        labels: { 
+                            color: '#00ff41',
+                            boxWidth: window.innerWidth <= 768 ? 10 : 40 // Smaller legend on mobile
+                        },
+                        display: window.innerWidth > 480 // Hide legend on very small screens
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 20, 0, 0.9)',
@@ -126,6 +161,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         borderWidth: 1,
                         titleColor: '#00ff41',
                         bodyColor: '#00ff41',
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.parsed.y;
+                                let valueCategory = '';
+                                
+                                if (value >= 1000) valueCategory = ' (Very High)';
+                                else if (value >= 100) valueCategory = ' (High)';
+                                else if (value >= 10) valueCategory = ' (Medium)';
+                                else valueCategory = ' (Low)';
+                                
+                                // Format large numbers with commas
+                                const formattedValue = value.toLocaleString(undefined, {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 2
+                                });
+                                
+                                return `Block Total: ${formattedValue} ETH${valueCategory}`;
+                            }
+                        }
                     }
                 },
                 animation: {
@@ -261,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Calculate speed based on value (higher value = slower fall to make it easier to hover)
             // Use logarithmic scale to handle wide range of values
-            const baseSpeed = 1;
+            const baseSpeed = window.innerWidth <= 768 ? 0.7 : 1; // Slower on mobile for easier interaction
             const value = tx.value || 0;
             const speed = value > 0 ? 
                 baseSpeed * (1 - Math.min(0.8, Math.log10(value + 1) / 5)) : 
@@ -289,25 +344,88 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateValueChart(transactions) {
         if (!valueChart) return;
         
-        // Calculate average value of this batch
-        const totalValue = transactions.reduce((sum, tx) => sum + (tx.value || 0), 0);
-        const avgValue = transactions.length > 0 ? totalValue / transactions.length : 0;
+        // Group transactions by block number and calculate total value per block
+        const blockTotals = new Map(); // Maps blockNumber -> total ETH value
         
-        // Add new data point
-        const timestamp = new Date().toLocaleTimeString();
+        transactions.forEach(tx => {
+            const blockNumber = tx.blockNumber;
+            
+            // Skip blocks we already processed to avoid duplicates
+            if (processedBlocks.has(blockNumber)) return;
+            
+            const value = tx.value || 0;
+            if (blockTotals.has(blockNumber)) {
+                blockTotals.set(blockNumber, blockTotals.get(blockNumber) + value);
+            } else {
+                blockTotals.set(blockNumber, value);
+            }
+        });
         
-        // Add latest data point
-        chartData.labels.push(timestamp);
-        chartData.datasets[0].data.push(avgValue);
+        // If no new blocks, return
+        if (blockTotals.size === 0) return;
         
-        // Keep only last 20 data points
-        if (chartData.labels.length > 20) {
-            chartData.labels.shift();
-            chartData.datasets[0].data.shift();
+        // Mark these blocks as processed
+        for (const blockNumber of blockTotals.keys()) {
+            processedBlocks.add(blockNumber);
+        }
+        
+        // Add new data points for each block
+        for (const [blockNumber, totalValue] of blockTotals.entries()) {
+            // Add latest data point
+            chartData.labels.push(`Block ${blockNumber}`);
+            chartData.datasets[0].data.push(totalValue);
+            
+            // Keep only last n data points (or fewer on mobile)
+            const maxDataPoints = window.innerWidth <= 480 ? 10 : (window.innerWidth <= 768 ? 15 : 20);
+            if (chartData.labels.length > maxDataPoints) {
+                chartData.labels.shift();
+                chartData.datasets[0].data.shift();
+            }
         }
         
         // Update chart
         valueChart.update();
+        
+        // Update total volume display
+        updateTotalVolume();
+    }
+    
+    // Calculate and update the total volume display
+    function updateTotalVolume() {
+        const totalVolume = chartData.datasets[0].data.reduce((sum, value) => sum + value, 0);
+        
+        // Format the total volume
+        let formattedVolume;
+        if (totalVolume >= 1000000) {
+            formattedVolume = (totalVolume / 1000000).toLocaleString(undefined, { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            }) + 'M';
+        } else if (totalVolume >= 1000) {
+            formattedVolume = (totalVolume / 1000).toLocaleString(undefined, { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            }) + 'K';
+        } else {
+            formattedVolume = totalVolume.toLocaleString(undefined, { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            });
+        }
+        
+        // Update the display
+        totalVolumeElement.textContent = formattedVolume;
+        
+        // Color the text based on the volume
+        if (totalVolume >= 10000) {
+            totalVolumeElement.style.color = 'rgba(255, 0, 0, 1)'; // Red
+        } else if (totalVolume >= 1000) {
+            totalVolumeElement.style.color = 'rgba(255, 165, 0, 1)'; // Orange
+        } else if (totalVolume >= 100) {
+            totalVolumeElement.style.color = 'rgba(255, 255, 0, 1)'; // Yellow
+        } else {
+            totalVolumeElement.style.color = 'rgba(0, 255, 65, 1)'; // Green
+        }
     }
     
     // Draw the matrix animation
@@ -325,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!tx) continue;
             
             // Calculate x position for this column
-            const x = i * 20 + 10;
+            const x = i * columnWidth + columnWidth/2;
             
             // Calculate brightness based on transaction value
             const brightness = column.brightness;
@@ -370,19 +488,24 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(drawMatrix);
     }
     
-    // Handle mouse movement for hovering over transactions
-    canvas.addEventListener('mousemove', (e) => {
-        // Calculate which column the mouse is over
+    // Get column index from cursor/touch position
+    function getColumnIndexFromPosition(clientX) {
         const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const columnIndex = Math.floor(mouseX / 20);
+        const canvasX = clientX - rect.left;
+        return Math.floor(canvasX / columnWidth);
+    }
+    
+    // Handle interaction with transactions
+    function handleInteraction(clientX, clientY) {
+        // Calculate which column the cursor/touch is over
+        const columnIndex = getColumnIndexFromPosition(clientX);
         
         // Check if there's a transaction in this column
         const transaction = transactionsByColumn[columnIndex];
         
         if (transaction) {
             // Show tooltip with transaction details
-            showTooltip(transaction, e.clientX, e.clientY);
+            showTooltip(transaction, clientX, clientY);
             
             // Make the current active transaction
             activeTransaction = transaction;
@@ -397,12 +520,41 @@ document.addEventListener('DOMContentLoaded', () => {
             hideTooltip();
             activeTransaction = null;
         }
+    }
+    
+    // Mouse event handlers
+    canvas.addEventListener('mousemove', (e) => {
+        handleInteraction(e.clientX, e.clientY);
     });
     
-    // Handle mouse leaving the canvas
     canvas.addEventListener('mouseleave', () => {
         hideTooltip();
         activeTransaction = null;
+    });
+    
+    // Touch event handlers for mobile
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            handleInteraction(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
+    
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            handleInteraction(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
+    
+    canvas.addEventListener('touchend', () => {
+        // Don't hide tooltip immediately on mobile, so users can read it
+        setTimeout(() => {
+            hideTooltip();
+            activeTransaction = null;
+        }, 1500);
     });
     
     // Show tooltip with transaction details
@@ -432,34 +584,60 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryColor = 'rgba(0, 255, 65, 1)'; // Green
         }
         
+        // Truncate addresses for mobile
+        const truncateAddress = (address, length = 12) => {
+            if (!address) return '';
+            if (window.innerWidth <= 480 && address.length > length * 2) {
+                return `${address.substring(0, length)}...${address.substring(address.length - length)}`;
+            }
+            return address;
+        };
+        
         // Update tooltip content
-        tooltipHash.textContent = tx.hash;
-        tooltipFrom.textContent = tx.from;
-        tooltipTo.textContent = tx.to || 'Contract Creation';
+        tooltipHash.textContent = truncateAddress(tx.hash);
+        tooltipFrom.textContent = truncateAddress(tx.from);
+        tooltipTo.textContent = truncateAddress(tx.to || 'Contract Creation');
         tooltipValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
         tooltipBlock.textContent = tx.blockNumber;
         
-        // Position tooltip near cursor but not under it
-        const tooltipWidth = 400; // Approximate width
-        const tooltipHeight = 150; // Approximate height
-        
-        // Calculate position to avoid going off-screen
-        let posX = x + 15;
-        let posY = y + 15;
-        
-        // Adjust if too close to right edge
-        if (posX + tooltipWidth > window.innerWidth) {
-            posX = x - tooltipWidth - 15;
+        // Position tooltip logic
+
+        // Tooltip sizing
+        let tooltipWidth, tooltipHeight;
+        if (window.innerWidth <= 480) {
+            // Smaller tooltip on mobile (full-width with margin)
+            tooltipWidth = window.innerWidth - 30;
+            tooltipHeight = 180;
+            
+            // For smaller screens, position tooltip at bottom center
+            tooltip.style.left = '15px';
+            tooltip.style.top = `${window.innerHeight - tooltipHeight - 100}px`;
+        } else {
+            // Desktop positioning
+            tooltipWidth = Math.min(450, window.innerWidth * 0.8);
+            tooltipHeight = 150;
+            
+            // Calculate position to avoid going off-screen
+            let posX = x + 15;
+            let posY = y + 15;
+            
+            // Adjust if too close to right edge
+            if (posX + tooltipWidth > window.innerWidth) {
+                posX = x - tooltipWidth - 15;
+            }
+            
+            // Adjust if too close to bottom edge
+            if (posY + tooltipHeight > window.innerHeight) {
+                posY = y - tooltipHeight - 15;
+            }
+            
+            // Set position
+            tooltip.style.left = `${posX}px`;
+            tooltip.style.top = `${posY}px`;
         }
         
-        // Adjust if too close to bottom edge
-        if (posY + tooltipHeight > window.innerHeight) {
-            posY = y - tooltipHeight - 15;
-        }
-        
-        // Set position
-        tooltip.style.left = `${posX}px`;
-        tooltip.style.top = `${posY}px`;
+        // Set width
+        tooltip.style.maxWidth = `${tooltipWidth}px`;
         
         // Show tooltip
         tooltip.classList.remove('hidden');

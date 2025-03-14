@@ -13,21 +13,28 @@
     box-sizing: border-box;
 }
 
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     font-family: var(--terminal-font);
     color: var(--matrix-text);
     background-color: var(--matrix-background);
-    overflow: hidden;
     position: relative;
     height: 100vh;
     width: 100vw;
+    -webkit-tap-highlight-color: transparent; /* Remove touch highlight on mobile */
+    touch-action: manipulation; /* Improve touch behavior */
 }
 
 .container {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 15px;
     position: relative;
     z-index: 10;
 }
@@ -45,7 +52,7 @@ body {
 header {
     position: relative;
     z-index: 10;
-    padding: 1rem 0;
+    padding: 0.7rem 0;
     border-bottom: 1px solid var(--matrix-dark-green);
     box-shadow: 0 0 15px var(--matrix-green);
     background-color: rgba(0, 10, 0, 0.85);
@@ -68,7 +75,7 @@ header h1 i {
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 #connection-status {
@@ -104,12 +111,13 @@ header h1 i {
     border-radius: 4px;
     background-color: rgba(0, 50, 0, 0.5);
     border: 1px solid var(--matrix-dark-green);
+    white-space: nowrap;
 }
 
 main {
     position: relative;
     z-index: 5;
-    height: calc(100vh - 130px);
+    height: calc(100vh - 120px);
     display: flex;
     flex-direction: column;
 }
@@ -125,6 +133,7 @@ main {
     display: block;
     width: 100%;
     height: 100%;
+    touch-action: none; /* Prevent browser handling of multi-touch gestures */
 }
 
 #tx-tooltip {
@@ -138,6 +147,7 @@ main {
     max-width: 450px;
     pointer-events: none;
     transition: opacity 0.3s;
+    font-size: 0.9rem;
 }
 
 #tx-tooltip.hidden {
@@ -157,6 +167,7 @@ main {
 .tooltip-row {
     display: flex;
     margin-bottom: 5px;
+    word-break: break-word;
 }
 
 .tooltip-row .label {
@@ -170,13 +181,30 @@ main {
 }
 
 #chart-container {
-    height: 150px;
+    height: 120px;
     width: 100%;
     background-color: rgba(0, 10, 0, 0.7);
     border-top: 1px solid var(--matrix-dark-green);
     padding: 10px;
     position: relative;
     box-shadow: 0 0 15px var(--matrix-green);
+}
+
+#chart-summary {
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    z-index: 10;
+    font-size: 0.9rem;
+    background-color: rgba(0, 20, 0, 0.7);
+    border: 1px solid var(--matrix-dark-green);
+    border-radius: 4px;
+    padding: 3px 8px;
+    text-shadow: 0 0 5px var(--matrix-green);
+}
+
+#total-volume {
+    font-weight: bold;
 }
 
 #value-chart {
@@ -236,11 +264,15 @@ footer a:hover {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #chart-container {
-        height: 120px;
+        height: 100px;
     }
     
     header h1 {
         font-size: 1.5rem;
+    }
+    
+    header h1 i {
+        font-size: 1.7rem;
     }
     
     .status-container {
@@ -250,19 +282,93 @@ footer a:hover {
     
     #connection-status, #latest-block {
         width: 100%;
+        font-size: 0.9rem;
+    }
+    
+    main {
+        height: calc(100vh - 110px);
+    }
+    
+    .tooltip-row {
+        font-size: 0.8rem;
+    }
+    
+    .tooltip-row .label {
+        flex: 0 0 50px;
+    }
+    
+    footer {
+        font-size: 0.8rem;
     }
 }
 
 @media (max-width: 576px) {
     #chart-container {
-        height: 100px;
+        height: 80px;
     }
     
     header h1 {
         font-size: 1.2rem;
     }
     
+    header h1 i {
+        font-size: 1.4rem;
+        margin-right: 5px;
+    }
+    
+    .status-container {
+        gap: 0.3rem;
+    }
+    
+    main {
+        height: calc(100vh - 100px);
+    }
+    
     #tx-tooltip {
-        max-width: 90%;
+        padding: 8px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .tooltip-header {
+        font-size: 0.9rem;
+    }
+    
+    .tooltip-row {
+        font-size: 0.75rem;
+    }
+    
+    .tooltip-row .label {
+        flex: 0 0 40px;
+    }
+    
+    footer {
+        padding: 0.3rem 0;
+        font-size: 0.7rem;
+    }
+}
+
+/* iPhone SE and other very small screens */
+@media (max-width: 375px) {
+    header h1 {
+        font-size: 1rem;
+    }
+    
+    header h1 i {
+        font-size: 1.2rem;
+        margin-right: 5px;
+    }
+    
+    #connection-status, #latest-block {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    #chart-container {
+        height: 70px;
+        padding: 5px;
+    }
+    
+    main {
+        height: calc(100vh - 90px);
     }
 } 

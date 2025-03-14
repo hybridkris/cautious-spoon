@@ -124,7 +124,7 @@ header h1 i {
 main {
     position: relative;
     z-index: 5;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 144px); /* Adjusted for the increased chart height */
     display: flex;
     flex-direction: column;
 }
@@ -134,7 +134,7 @@ main {
     display: flex;
     flex-direction: row;
     flex: 1;
-    height: calc(100% - 120px);
+    height: calc(100% - 144px); /* Adjusted for the increased chart height */
     width: 100%;
     overflow: hidden;
 }
@@ -158,9 +158,9 @@ main {
 
 /* Details panel (right or bottom) */
 #details-panel {
-    flex: 1;
+    flex: 0.8;
     min-width: 30%;
-    max-width: 50%;
+    max-width: 40%;
     padding: 15px;
     background-color: rgba(25, 25, 50, 0.8);
     border-left: 1px solid var(--synthwave-purple);
@@ -246,7 +246,7 @@ main {
 
 /* Chart container styling */
 #chart-container {
-    height: 120px;
+    height: 144px;
     width: 100%;
     background-color: rgba(25, 25, 50, 0.7);
     border-top: 1px solid var(--synthwave-purple);
@@ -370,31 +370,32 @@ footer a:hover {
 @media (max-width: 768px) {
     .split-container {
         flex-direction: column;
-        height: calc(100% - 140px); /* Adjusted to give more space to chart */
+        height: calc(100% - 140px); /* Keep original value for mobile */
     }
     
     #matrix-panel {
         height: 50%;
         min-width: 100%;
         border-right: none;
-        border-bottom: 1px solid var(--matrix-dark-green);
+        border-bottom: 1px solid var(--synthwave-purple);
     }
     
     #details-panel {
+        flex: 1;
         height: 50%;
         min-width: 100%;
         max-width: 100%;
         border-left: none;
-        border-top: 1px solid var(--matrix-dark-green);
+        border-top: 1px solid var(--synthwave-purple);
     }
     
     #chart-container {
-        height: 140px; /* Taller on mobile */
-        padding-top: 25px; /* Space for toggle button */
+        height: 140px;
+        padding-top: 25px;
     }
     
     .chart-toggle-btn {
-        display: block; /* Show on mobile */
+        display: block;
     }
     
     /* Expanded chart state */
@@ -421,7 +422,7 @@ footer a:hover {
     }
     
     main {
-        height: calc(100vh - 110px);
+        height: calc(100vh - 110px); /* Keep original value for mobile */
     }
     
     .details-row {

@@ -24,21 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Matrix settings
     let txDots = [];
-    let fontSize = isMobile ? 12 : 16; // Size for kanji characters
-    let dotSpacing = isMobile ? 15 : 20; // Space between characters
+    let diamondSize = isMobile ? 10 : 14; // Size for diamonds
+    let dotSpacing = isMobile ? 15 : 20; // Space between diamonds
     let activeTransaction = null;
     // Canvas clearing opacity (complete clear for no trails)
     const CANVAS_FADE_OPACITY = 1.0; // Full opacity for complete clear each frame
-    
-    // Collection of kanji characters to use for the visualization
-    const KANJI_CHARS = [
-        '零', '壱', '弐', '参', '肆', '伍', '陸', '漆', '捌', '玖', // Japanese numerals
-        '金', '銀', '貨', '幣', '財', '宝', '富', '資', '産', '価', // Finance/value related
-        '通', '送', '受', '取', '与', '仮', '想', '鎖', '証', '明', // Transaction related
-        '東', '西', '南', '北', '空', '天', '地', '風', '火', '水', // Elements
-        '光', '影', '動', '静', '高', '低', '大', '小', '急', '緩', // Properties
-        '強', '弱', '速', '遅', '新', '古', '始', '終', '実', '虚'  // More properties
-    ];
     
     // Transaction data
     let allTransactions = [];
@@ -94,13 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
-        // Adjust font size and spacing based on screen size
-        fontSize = isMobile ? 12 : 16;
+        // Adjust diamond size and spacing based on screen size
+        diamondSize = isMobile ? 10 : 14;
         dotSpacing = isMobile ? 15 : 20;
         
         // For very small screens
         if (window.innerWidth <= 480) {
-            fontSize = 10;
+            diamondSize = 8;
             dotSpacing = 10;
         }
         
@@ -344,18 +334,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate glow size based on transaction value
     // Higher value = larger glow
     function calculateGlowSize(value) {
-        if (!value || value === 0) return fontSize * 1.2;
+        if (!value || value === 0) return diamondSize * 1.5;
         
         // Use logarithmic scale for glow to handle wide range of values
-        // Range from 1.2x to 3x of font size
-        return Math.min(fontSize * 3, fontSize * 1.2 + Math.log10(value + 1) * fontSize * 0.5);
+        // Range from 1.5x to 3x of diamond size
+        return Math.min(diamondSize * 3, diamondSize * 1.5 + Math.log10(value + 1) * diamondSize * 0.5);
     }
     
     // Calculate speed based on transaction value
     // Higher value = slower movement
     function calculateSpeed(value) {
         // Apply 60% speed factor to slow down all movement
-        const speedFactor = 0.6;
+        // Then reduce it by another 40%
+        const speedFactor = 0.36; // 0.6 * 0.6 (40% reduction)
         
         if (!value || value === 0) return 3.0 * speedFactor; // Slowed base speed for zero-value transactions
         
@@ -372,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addTransactionsToMatrix(transactions) {
         transactions.forEach(tx => {
             // Calculate initial vertical position (spread across canvas height)
-            const y = Math.random() * (canvas.height - fontSize) + fontSize;
+            const y = Math.random() * (canvas.height - diamondSize) + diamondSize;
             
             // Calculate speed based on value (higher value = slower movement)
             const value = tx.value || 0;
@@ -381,20 +372,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Calculate glow size based on value
             const glowSize = calculateGlowSize(value);
             
-            // Select a random kanji character
-            const kanji = KANJI_CHARS[Math.floor(Math.random() * KANJI_CHARS.length)];
-            
-            // Create a new transaction representation
+            // Create a new transaction representation with diamond
             const txDot = {
                 x: canvas.width + 10, // Start just off-screen to the right
                 y: y,
-                kanji: kanji,         // The kanji character to display
-                fontSize: fontSize,   // Size of the character
+                size: diamondSize,   // Size of the diamond
                 glowSize: glowSize,
                 speed: speed,
                 tx: tx,
                 color: getTransactionColor(value),
-                hash: tx.hash
+                hash: tx.hash,
+                rotation: Math.random() * Math.PI // Random initial rotation for variety
             };
             
             // Add to txDots array
@@ -490,16 +478,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Draw the matrix animation (kanji moving horizontally)
+    // Draw the matrix animation (diamonds moving horizontally)
     function drawMatrix() {
         // Clear canvas completely each frame (no trails)
         ctx.fillStyle = `rgba(0, 0, 0, ${CANVAS_FADE_OPACITY})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw each transaction kanji
+        // Draw each transaction diamond
         txDots.forEach((dot, index) => {
-            // Move kanji leftward (from right to left)
+            // Move diamond leftward (from right to left)
             dot.x -= dot.speed;
+            
+            // Slowly rotate the diamond
+            dot.rotation += 0.01;
             
             // Set opacity based on distance from sides of screen
             let opacity = 1;
@@ -513,36 +504,51 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check if dot is active
             const isActive = activeTransaction && activeTransaction.hash === dot.hash;
             
-            // Set font properties
+            // Get the color and size
             const color = dot.color;
-            ctx.font = `bold ${dot.fontSize}px monospace`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            const size = isActive ? dot.size * 1.3 : dot.size;
             
             // Draw multiple layers of shadow for stronger glow effect
             const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
             
-            // First pass - outer glow
-            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.5})`;
-            ctx.shadowBlur = glowSize * 1.5;
+            // Set shadow for glow effect
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
+            ctx.shadowBlur = glowSize;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             
-            // Draw the character
-            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
-            ctx.fillText(dot.kanji, dot.x, dot.y);
+            // Draw the diamond shape
+            ctx.save();
+            ctx.translate(dot.x, dot.y);
+            ctx.rotate(dot.rotation);
             
-            // Second pass - inner glow (brighter)
-            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
-            ctx.shadowBlur = glowSize * 0.8;
-            ctx.fillText(dot.kanji, dot.x, dot.y);
+            // Diamond path
+            ctx.beginPath();
+            ctx.moveTo(0, -size);  // Top
+            ctx.lineTo(size, 0);   // Right
+            ctx.lineTo(0, size);   // Bottom
+            ctx.lineTo(-size, 0);  // Left
+            ctx.closePath();
             
-            // Final pass - character itself (brightest)
+            // Fill with gradient for more depth
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+            gradient.addColorStop(0, `rgba(${Math.min(255, color.r + 50)}, ${Math.min(255, color.g + 50)}, ${Math.min(255, color.b + 50)}, ${opacity})`);
+            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`);
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Add a subtle stroke for definition
+            ctx.strokeStyle = `rgba(${Math.min(255, color.r + 100)}, ${Math.min(255, color.g + 100)}, ${Math.min(255, color.b + 100)}, ${opacity})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // Reset shadow for next drawing
             ctx.shadowBlur = 0;
-            ctx.fillStyle = `rgba(${Math.min(255, color.r + 50)}, ${Math.min(255, color.g + 50)}, ${Math.min(255, color.b + 50)}, ${opacity})`;
-            ctx.fillText(dot.kanji, dot.x, dot.y);
             
-            // Remove kanji that have moved off-screen to the left
+            // Remove diamonds that have moved off-screen to the left
             if (dot.x < -50) {
                 txDots.splice(index, 1);
             }
@@ -552,19 +558,19 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(drawMatrix);
     }
     
-    // Find the nearest transaction kanji to a given position
+    // Find the nearest transaction diamond to a given position
     function findNearestDot(x, y) {
         let closestDot = null;
         let closestDistance = Number.MAX_VALUE;
         
-        // Calculate distance to each kanji
+        // Calculate distance to each diamond
         txDots.forEach(dot => {
             const dx = dot.x - x;
             const dy = dot.y - y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Check if this is the closest kanji (using slightly larger hit area for text)
-            if (distance < closestDistance && distance < 40) { // 40px hit area for kanji
+            // Check if this is the closest diamond (using hit area based on size)
+            if (distance < closestDistance && distance < dot.size * 1.5) {
                 closestDistance = distance;
                 closestDot = dot;
             }

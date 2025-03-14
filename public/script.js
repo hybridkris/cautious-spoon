@@ -358,6 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Apply base speed factor (previously reduced by 40%)
         const baseSpeedFactor = 0.36;
         
+        // Increase speed by 10% for desktop version
+        const deviceFactor = isMobile ? 1.0 : 1.1;
+        
         // Use block number to create block-based speed variations
         // Convert block number to a value between 0.85 and 1.15 for 30% variation between blocks
         const blockFactor = blockNumber ? (0.85 + (blockNumber % 10) * 0.03) : 1.0;
@@ -373,8 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
             speed = baseSpeed * valueSpeedFactor;
         }
         
-        // Apply block factor to create grouping effect
-        return speed * blockFactor;
+        // Apply block factor to create grouping effect and device-specific speed adjustment
+        return speed * blockFactor * deviceFactor;
     }
     
     // Add transactions to the matrix visualization

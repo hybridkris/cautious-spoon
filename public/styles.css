@@ -23,23 +23,25 @@ html, body {
 }
 
 body {
-    font-family: var(--terminal-font);
-    color: var(--synthwave-text);
-    background-color: var(--synthwave-darkest);
-    position: relative;
-    height: 100vh;
-    width: 100vw;
-    -webkit-tap-highlight-color: transparent; /* Remove touch highlight on mobile */
-    touch-action: manipulation; /* Improve touch behavior */
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom, #000, #10002b);
+    color: #f0f0f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 0 15px;
-    position: relative;
-    z-index: 10;
+    padding: 1rem;
+    box-sizing: border-box;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .matrix-overlay {
@@ -53,72 +55,49 @@ body {
 }
 
 header {
-    position: relative;
-    z-index: 10;
-    padding: 0.7rem 0;
-    border-bottom: 1px solid var(--synthwave-purple);
-    box-shadow: 0 0 15px var(--synthwave-pink);
-    background-color: rgba(25, 25, 50, 0.85);
-}
-
-header h1 {
-    display: flex;
-    align-items: center;
-    font-size: 1.8rem;
-    text-shadow: 0 0 10px var(--synthwave-cyan), 0 0 20px var(--synthwave-cyan);
-    margin-bottom: 10px;
-    color: var(--synthwave-cyan);
-}
-
-header h1 i {
-    margin-right: 10px;
-    font-size: 2rem;
-    color: var(--synthwave-cyan);
-}
-
-.status-container {
     display: flex;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(80, 250, 255, 0.3);
+}
+
+.header-left h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: rgba(80, 250, 255, 1);
+    text-shadow: 0 0 10px rgba(80, 250, 255, 0.8);
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 #connection-status {
     display: flex;
     align-items: center;
-    font-weight: 600;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    background-color: rgba(25, 25, 50, 0.7);
-    border: 1px solid var(--synthwave-purple);
-    color: var(--synthwave-cyan);
+    font-size: 0.9rem;
 }
 
 #connection-status i {
     margin-right: 0.5rem;
-}
-
-#connection-status.connecting i {
-    color: var(--synthwave-pink);
-    animation: pulse 1s infinite;
+    font-size: 0.7rem;
 }
 
 #connection-status.connected i {
-    color: var(--synthwave-cyan);
+    color: rgba(80, 250, 255, 1);
 }
 
 #connection-status.disconnected i {
-    color: var(--synthwave-red);
+    color: rgba(255, 50, 50, 1);
 }
 
 #latest-block {
-    font-weight: 600;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    background-color: rgba(25, 25, 50, 0.7);
-    border: 1px solid var(--synthwave-purple);
-    white-space: nowrap;
-    color: var(--synthwave-cyan);
+    color: rgba(255, 105, 180, 1);
+    font-size: 0.9rem;
 }
 
 main {
@@ -403,22 +382,17 @@ footer a:hover {
         height: 240px;
     }
     
-    header h1 {
-        font-size: 1.5rem;
+    header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
     
-    header h1 i {
-        font-size: 1.7rem;
-    }
-    
-    .status-container {
-        flex-direction: column;
-        align-items: flex-start;
+    .header-left h1 {
+        font-size: 1.2rem;
     }
     
     #connection-status, #latest-block {
-        width: 100%;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
     
     main {
@@ -457,17 +431,17 @@ footer a:hover {
         right: 10px;
     }
     
-    header h1 {
+    .header-left h1 {
         font-size: 1.2rem;
     }
     
-    header h1 i {
-        font-size: 1.4rem;
-        margin-right: 5px;
+    .header-controls {
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
     
-    .status-container {
-        gap: 0.3rem;
+    #connection-status, #latest-block {
+        font-size: 0.7rem;
     }
     
     main {
@@ -509,13 +483,13 @@ footer a:hover {
 
 /* iPhone SE and other very small screens */
 @media (max-width: 375px) {
-    header h1 {
+    .header-left h1 {
         font-size: 1rem;
     }
     
-    header h1 i {
-        font-size: 1.2rem;
-        margin-right: 5px;
+    .header-controls {
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
     
     #connection-status, #latest-block {
@@ -576,4 +550,167 @@ footer a:hover {
 .clear-details-btn:hover {
     background-color: var(--synthwave-blue);
     box-shadow: 0 0 15px var(--synthwave-pink);
+}
+
+/* Main content area */
+.content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 1rem;
+}
+
+/* Matrix visualization container */
+#matrix-container {
+    position: relative;
+    width: 100%;
+    height: 50vh;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(80, 250, 255, 0.3);
+    border-radius: 5px;
+    overflow: hidden;
+    transition: height 0.3s ease;
+}
+
+/* Volume and chart section */
+.volume-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.volume-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.volume-title {
+    font-size: 1rem;
+    color: rgba(80, 250, 255, 1);
+    margin: 0;
+}
+
+#total-volume {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+/* Chart container */
+#chart-container {
+    width: 100%;
+    height: 30vh;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(80, 250, 255, 0.3);
+    border-radius: 5px;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+#value-chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* Transaction details panel */
+#details-panel {
+    padding: 0.5rem;
+    background-color: rgba(25, 25, 50, 0.5);
+    border: 1px solid rgba(191, 85, 255, 0.5);
+    border-radius: 5px;
+    margin-top: 1rem;
+}
+
+.panel-title {
+    margin: 0 0 0.5rem 0;
+    color: rgba(191, 85, 255, 1);
+    font-size: 1rem;
+}
+
+#tx-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#tx-details.hidden {
+    display: none;
+}
+
+.detail-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: rgba(255, 105, 180, 1);
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: rgba(80, 250, 255, 1);
+    word-break: break-all;
+}
+
+/* Etherscan link styling */
+#etherscan-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(191, 85, 255, 0.2);
+    border: 1px solid rgba(191, 85, 255, 0.5);
+    border-radius: 3px;
+    color: rgba(191, 85, 255, 1);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+#etherscan-link:hover {
+    background: rgba(191, 85, 255, 0.4);
+}
+
+/* Chart toggle button for mobile */
+.chart-toggle-btn, .clear-details-btn {
+    background: rgba(80, 250, 255, 0.2);
+    border: 1px solid rgba(80, 250, 255, 0.5);
+    border-radius: 3px;
+    color: rgba(80, 250, 255, 1);
+    padding: 0.3rem 0.6rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chart-toggle-btn:hover, .clear-details-btn:hover {
+    background: rgba(80, 250, 255, 0.4);
+}
+
+/* Hide elements */
+.hidden {
+    display: none !important;
+}
+
+/* Compact layout for single-screen mobile view */
+@media (max-height: 700px) and (max-width: 768px) {
+    #matrix-container {
+        height: 50vh;
+    }
+    
+    #details-panel {
+        max-height: 30vh;
+        overflow-y: auto;
+    }
+    
+    .detail-row {
+        margin-bottom: 0.2rem;
+    }
 } 

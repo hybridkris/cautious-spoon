@@ -21,11 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Detect if mobile
     const isMobile = window.innerWidth <= 768;
+    // For very small screens, use simplified rendering
+    const isVerySmallScreen = window.innerWidth <= 480;
     
     // Matrix settings
     let txDots = [];
-    let diamondSize = isMobile ? 10 : 14; // Size for diamonds
-    let dotSpacing = isMobile ? 15 : 20; // Space between diamonds
+    let cubeSize = isMobile ? 8 : 12; // Size for cubes (slightly smaller than diamonds)
+    let dotSpacing = isMobile ? 30 : 40; // Increased spacing between cubes
     let activeTransaction = null;
     // Canvas clearing opacity (complete clear for no trails)
     const CANVAS_FADE_OPACITY = 1.0; // Full opacity for complete clear each frame
@@ -84,14 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
-        // Adjust diamond size and spacing based on screen size
-        diamondSize = isMobile ? 10 : 14;
-        dotSpacing = isMobile ? 15 : 20;
+        // Adjust cube size and spacing based on screen size
+        cubeSize = isMobile ? 8 : 12;
+        dotSpacing = isMobile ? 30 : 40;
         
         // For very small screens
         if (window.innerWidth <= 480) {
-            diamondSize = 8;
-            dotSpacing = 10;
+            cubeSize = 6;
+            dotSpacing = 20;
         }
         
         // Initialize empty txDots array
@@ -183,30 +185,55 @@ document.addEventListener('DOMContentLoaded', () => {
     function addChartToggleButton() {
         if (isMobile) {
             const toggleButton = document.createElement('button');
-            toggleButton.textContent = 'Expand Chart';
+            toggleButton.textContent = 'Show Chart';
             toggleButton.className = 'chart-toggle-btn';
-            toggleButton.addEventListener('click', toggleChartSize);
-            chartContainer.appendChild(toggleButton);
+            toggleButton.addEventListener('click', toggleChartVisibility);
+            
+            // Add button to the header for better visibility
+            const headerControls = document.querySelector('.header-controls') || document.querySelector('header');
+            if (headerControls) {
+                headerControls.appendChild(toggleButton);
+            } else {
+                chartContainer.appendChild(toggleButton);
+            }
+            
+            // Initially hide chart on mobile for more screen space
+            chartContainer.classList.add('hidden');
         }
     }
     
-    // Toggle chart size between normal and expanded
-    function toggleChartSize() {
-        const isExpanded = chartContainer.classList.toggle('expanded');
+    // Toggle chart visibility
+    function toggleChartVisibility() {
+        const isVisible = !chartContainer.classList.toggle('hidden');
         const toggleButton = document.querySelector('.chart-toggle-btn');
         
-        if (isExpanded) {
-            toggleButton.textContent = 'Collapse Chart';
-        } else {
-            toggleButton.textContent = 'Expand Chart';
+        toggleButton.textContent = isVisible ? 'Hide Chart' : 'Show Chart';
+        
+        // If showing chart, resize it to fit current layout
+        if (isVisible && valueChart) {
+            setTimeout(() => {
+                valueChart.resize();
+            }, 100);
         }
         
-        // Give time for the CSS transition to complete
-        setTimeout(() => {
-            if (valueChart) {
-                valueChart.resize();
+        // Adjust container heights when chart visibility changes
+        adjustContainerHeights();
+    }
+    
+    // Adjust container heights based on chart visibility
+    function adjustContainerHeights() {
+        const matrixContainer = document.getElementById('matrix-container');
+        const isChartHidden = chartContainer.classList.contains('hidden');
+        
+        if (matrixContainer) {
+            if (isChartHidden) {
+                // If chart is hidden, give more space to matrix
+                matrixContainer.style.height = '75vh';
+            } else {
+                // If chart is visible, reduce matrix size
+                matrixContainer.style.height = '45vh';
             }
-        }, 300);
+        }
     }
     
     // Handle window resize
@@ -225,6 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (valueChart) {
                 valueChart.destroy();
                 initChart();
+            }
+            
+            // Adjust container heights
+            if (isMobile) {
+                adjustContainerHeights();
             }
         }
     });
@@ -332,13 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Calculate glow size based on transaction value
-    // Higher value = larger glow, but ensure all diamonds have a substantial glow
+    // Higher value = larger glow, but ensure all cubes have a substantial glow
     function calculateGlowSize(value) {
-        if (!value || value === 0) return diamondSize * 2;
+        if (!value || value === 0) return cubeSize * 2;
         
-        // Increased minimum glow size to ensure all diamonds glow prominently
-        // Range from 2x to 3.5x of diamond size
-        return Math.min(diamondSize * 3.5, diamondSize * 2 + Math.log10(value + 1) * diamondSize * 0.5);
+        // Increased minimum glow size to ensure all cubes glow prominently
+        // Range from 2x to 3.5x of cube size
+        return Math.min(cubeSize * 3.5, cubeSize * 2 + Math.log10(value + 1) * cubeSize * 0.5);
     }
     
     // Calculate speed based on transaction value and block number
@@ -390,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add each transaction in this block group
             txs.forEach((tx, index) => {
                 // Calculate position with some variation but still clustered
-                // Diamonds in the same block will be roughly aligned horizontally and vertically
+                // Cubes in the same block will be roughly aligned horizontally and vertically
                 const laneWidth = canvas.height * 0.2; // Lane takes 20% of canvas height
                 
                 // Vary y position within the block's lane for a bit of natural randomness
@@ -405,22 +437,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Calculate glow size based on value
                 const glowSize = calculateGlowSize(value);
                 
-                // Stagger x starting positions for diamonds in the same block
-                // This creates a small delay between diamonds from the same block
-                const xOffset = index * (Math.random() * 30 + 15); // Random spacing between 15-45px
+                // Stagger x starting positions for cubes in the same block with increased spacing
+                // This creates a small delay between cubes from the same block
+                const xOffset = index * (Math.random() * 50 + 25); // Random spacing between 25-75px
                 
-                // Create a new transaction representation with diamond
+                // Create a new transaction representation with cube
                 const txDot = {
                     x: canvas.width + 10 + xOffset, // Start just off-screen to the right with offset
                     y: y,
-                    size: diamondSize,   // Size of the diamond
+                    size: cubeSize,   // Size of the cube
                     glowSize: glowSize,
                     speed: speed,
                     tx: tx,
                     color: getTransactionColor(value),
                     hash: tx.hash,
                     blockNumber: blockNum, // Store block number for reference
-                    rotation: Math.random() * Math.PI // Random initial rotation for variety
+                    rotationX: Math.random() * Math.PI, // X-axis rotation
+                    rotationY: Math.random() * Math.PI, // Y-axis rotation
+                    rotationZ: Math.random() * Math.PI  // Z-axis rotation
                 };
                 
                 // Add to txDots array
@@ -465,17 +499,19 @@ document.addEventListener('DOMContentLoaded', () => {
             chartData.datasets[0].data.push(totalValue);
             
             // Keep only last n data points (or fewer on mobile)
-            const maxDataPoints = window.innerWidth <= 480 ? 8 : (window.innerWidth <= 768 ? 12 : 20);
+            const maxDataPoints = isVerySmallScreen ? 8 : (isMobile ? 12 : 20);
             if (chartData.labels.length > maxDataPoints) {
                 chartData.labels.shift();
                 chartData.datasets[0].data.shift();
             }
         }
         
-        // Update chart
-        valueChart.update();
+        // Update chart if it's visible
+        if (!chartContainer.classList.contains('hidden')) {
+            valueChart.update();
+        }
         
-        // Update total volume display
+        // Always update total volume display, even if chart is hidden
         updateTotalVolume();
     }
     
@@ -517,19 +553,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Draw the matrix animation (diamonds moving horizontally)
+    // Draw the matrix animation (cubes moving horizontally)
     function drawMatrix() {
         // Clear canvas completely each frame (no trails)
         ctx.fillStyle = `rgba(0, 0, 0, ${CANVAS_FADE_OPACITY})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw each transaction diamond
+        // For mobile devices, periodically limit the number of dots for performance
+        if (isMobile && txDots.length > (isVerySmallScreen ? 30 : 50)) {
+            txDots = txDots.slice(0, isVerySmallScreen ? 30 : 50);
+        }
+        
+        // Draw each transaction cube
         txDots.forEach((dot, index) => {
-            // Move diamond leftward (from right to left)
+            // Move cube leftward (from right to left)
             dot.x -= dot.speed;
             
-            // Slowly rotate the diamond
-            dot.rotation += 0.01;
+            // Slowly rotate the cube on all axes
+            dot.rotationX += 0.01;
+            dot.rotationY += 0.015;
+            dot.rotationZ += 0.005;
             
             // Set opacity based on distance from sides of screen
             let opacity = 1;
@@ -547,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = dot.color;
             const size = isActive ? dot.size * 1.3 : dot.size;
             
-            // Enhanced glow effect for all diamonds
+            // Enhanced glow effect for all cubes
             const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
             
             // Apply multi-layered glow for a more prominent effect
@@ -558,79 +601,44 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             
-            // Draw the diamond shape with enhanced glow
-            ctx.save();
-            ctx.translate(dot.x, dot.y);
-            ctx.rotate(dot.rotation);
+            // Draw the 3D cube with perspective
+            drawCube(ctx, dot.x, dot.y, size, color, opacity, dot.rotationX, dot.rotationY, dot.rotationZ);
             
-            // Diamond path
-            ctx.beginPath();
-            ctx.moveTo(0, -size);  // Top
-            ctx.lineTo(size, 0);   // Right
-            ctx.lineTo(0, size);   // Bottom
-            ctx.lineTo(-size, 0);  // Left
-            ctx.closePath();
-            
-            // Fill with enhanced gradient for more depth and glow
-            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
-            gradient.addColorStop(0, `rgba(${Math.min(255, color.r + 70)}, ${Math.min(255, color.g + 70)}, ${Math.min(255, color.b + 70)}, ${opacity})`);
-            gradient.addColorStop(0.6, `rgba(${Math.min(255, color.r + 30)}, ${Math.min(255, color.g + 30)}, ${Math.min(255, color.b + 30)}, ${opacity})`);
-            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`);
-            
-            ctx.fillStyle = gradient;
-            ctx.fill();
-            
-            // Add a more prominent stroke for definition and additional glow
-            ctx.strokeStyle = `rgba(${Math.min(255, color.r + 120)}, ${Math.min(255, color.g + 120)}, ${Math.min(255, color.b + 120)}, ${opacity})`;
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-            
-            ctx.restore();
             ctx.restore();
             
             // Second pass - inner glow (smaller, more intense)
-            ctx.save();
-            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
-            ctx.shadowBlur = glowSize * 0.8;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
+            // Skip second glow pass on very small screens for performance
+            if (!isVerySmallScreen) {
+                ctx.save();
+                ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
+                ctx.shadowBlur = glowSize * 0.8;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                // Redraw the cube for the inner glow (slightly smaller)
+                drawCube(ctx, dot.x, dot.y, size * 0.95, color, opacity, dot.rotationX, dot.rotationY, dot.rotationZ);
+                
+                ctx.restore();
+            }
             
-            // Redraw the diamond for the inner glow
-            ctx.save();
-            ctx.translate(dot.x, dot.y);
-            ctx.rotate(dot.rotation);
-            
-            ctx.beginPath();
-            ctx.moveTo(0, -size);
-            ctx.lineTo(size, 0);
-            ctx.lineTo(0, size);
-            ctx.lineTo(-size, 0);
-            ctx.closePath();
-            
-            ctx.fillStyle = gradient;
-            ctx.fill();
-            
-            ctx.restore();
-            ctx.restore();
-            
-            // If this diamond is active or in the same block as the active transaction,
+            // If this cube is active or in the same block as the active transaction,
             // display the block number above it
             if (isActive || (activeTransaction && dot.blockNumber === activeTransaction.blockNumber)) {
-                // Display block number above the diamond
+                // Display block number above the cube
                 ctx.save();
-                ctx.font = `bold ${diamondSize * 0.8}px monospace`;
+                ctx.font = `bold ${cubeSize * 0.8}px monospace`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
                 ctx.shadowColor = `rgba(0, 0, 0, 0.8)`;
                 ctx.shadowBlur = 3;
                 
-                // Position the text above the diamond
-                ctx.fillText(`#${dot.blockNumber}`, dot.x, dot.y - diamondSize * 1.5);
+                // Position the text above the cube
+                ctx.fillText(`#${dot.blockNumber}`, dot.x, dot.y - cubeSize * 2);
                 ctx.restore();
                 
-                // Draw a connecting line to all diamonds of the same block if this is the active diamond
-                if (isActive) {
+                // Draw connecting lines only on non-small screens for performance
+                if (isActive && !isVerySmallScreen) {
                     txDots.forEach(otherDot => {
                         if (otherDot.hash !== dot.hash && otherDot.blockNumber === dot.blockNumber) {
                             // Draw a faint connecting line
@@ -645,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Remove diamonds that have moved off-screen to the left
+            // Remove cubes that have moved off-screen to the left
             if (dot.x < -50) {
                 txDots.splice(index, 1);
             }
@@ -655,19 +663,158 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(drawMatrix);
     }
     
-    // Find the nearest transaction diamond to a given position
+    // Function to draw a 3D cube
+    function drawCube(ctx, x, y, size, color, opacity, rotationX, rotationY, rotationZ) {
+        ctx.save();
+        ctx.translate(x, y);
+        
+        // Create a brighter color for highlighted faces
+        const brightColor = {
+            r: Math.min(255, color.r + 100),
+            g: Math.min(255, color.g + 100),
+            b: Math.min(255, color.b + 100)
+        };
+        
+        // Create a darker color for shadowed faces
+        const darkColor = {
+            r: Math.max(0, color.r - 50),
+            g: Math.max(0, color.g - 50),
+            b: Math.max(0, color.b - 50)
+        };
+        
+        // For very small screens or low-performance devices, use simplified cubes (fewer faces)
+        if (isVerySmallScreen) {
+            // Simplified cube - just draw 3 faces for better performance
+            // Use 2D rotation for simpler rendering
+            ctx.rotate(rotationZ);
+            
+            // Draw a simplified cube (3 visible faces maximum)
+            // Front face (always visible)
+            ctx.beginPath();
+            ctx.rect(-size, -size, size * 2, size * 2);
+            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${Math.min(255, color.r + 120)}, ${Math.min(255, color.g + 120)}, ${Math.min(255, color.b + 120)}, ${opacity})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Add some 3D effect with simple lines
+            ctx.beginPath();
+            ctx.moveTo(-size, -size);
+            ctx.lineTo(-size * 0.7, -size * 0.7);
+            ctx.moveTo(size, -size);
+            ctx.lineTo(size * 0.7, -size * 0.7);
+            ctx.moveTo(size, size);
+            ctx.lineTo(size * 0.7, size * 0.7);
+            ctx.moveTo(-size, size);
+            ctx.lineTo(-size * 0.7, size * 0.7);
+            ctx.stroke();
+            
+            // Top face
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.7, -size * 0.7);
+            ctx.lineTo(size * 0.7, -size * 0.7);
+            ctx.lineTo(size * 0.7, size * 0.7);
+            ctx.lineTo(-size * 0.7, size * 0.7);
+            ctx.closePath();
+            ctx.fillStyle = `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, ${opacity * 0.9})`;
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Full 3D cube for better hardware
+            // Define the vertices of a cube
+            // Centered at origin for easier rotation
+            const vertices = [
+                { x: -size, y: -size, z: -size }, // 0: back-top-left
+                { x: size, y: -size, z: -size },  // 1: back-top-right
+                { x: size, y: size, z: -size },   // 2: back-bottom-right
+                { x: -size, y: size, z: -size },  // 3: back-bottom-left
+                { x: -size, y: -size, z: size },  // 4: front-top-left
+                { x: size, y: -size, z: size },   // 5: front-top-right
+                { x: size, y: size, z: size },    // 6: front-bottom-right
+                { x: -size, y: size, z: size }    // 7: front-bottom-left
+            ];
+            
+            // Apply 3D rotation to vertices
+            const rotatedVertices = vertices.map(v => {
+                // Apply X rotation
+                let y1 = v.y * Math.cos(rotationX) - v.z * Math.sin(rotationX);
+                let z1 = v.y * Math.sin(rotationX) + v.z * Math.cos(rotationX);
+                
+                // Apply Y rotation
+                let x2 = v.x * Math.cos(rotationY) + z1 * Math.sin(rotationY);
+                let z2 = -v.x * Math.sin(rotationY) + z1 * Math.cos(rotationY);
+                
+                // Apply Z rotation
+                let x3 = x2 * Math.cos(rotationZ) - y1 * Math.sin(rotationZ);
+                let y3 = x2 * Math.sin(rotationZ) + y1 * Math.cos(rotationZ);
+                
+                return { x: x3, y: y3, z: z2 };
+            });
+            
+            // Define the faces of the cube (vertex indices)
+            const faces = [
+                { indices: [0, 1, 2, 3], color: darkColor },    // Back face
+                { indices: [4, 5, 6, 7], color: color },        // Front face
+                { indices: [0, 4, 7, 3], color: darkColor },    // Left face
+                { indices: [1, 5, 6, 2], color: brightColor },  // Right face
+                { indices: [0, 1, 5, 4], color: brightColor },  // Top face
+                { indices: [3, 2, 6, 7], color: darkColor }     // Bottom face
+            ];
+            
+            // Calculate depth for each face to determine drawing order (painter's algorithm)
+            const faceDepths = faces.map((face, i) => {
+                // Calculate center point of the face as average of its vertices
+                const centerZ = face.indices.reduce((sum, index) => sum + rotatedVertices[index].z, 0) / face.indices.length;
+                return { index: i, z: centerZ };
+            });
+            
+            // Sort faces by depth (back to front)
+            faceDepths.sort((a, b) => a.z - b.z);
+            
+            // Draw faces in sorted order
+            faceDepths.forEach(fd => {
+                const face = faces[fd.index];
+                
+                // Draw a face
+                ctx.beginPath();
+                for (let i = 0; i < face.indices.length; i++) {
+                    const vertex = rotatedVertices[face.indices[i]];
+                    if (i === 0) {
+                        ctx.moveTo(vertex.x, vertex.y);
+                    } else {
+                        ctx.lineTo(vertex.x, vertex.y);
+                    }
+                }
+                ctx.closePath();
+                
+                // Fill with appropriate color
+                ctx.fillStyle = `rgba(${face.color.r}, ${face.color.g}, ${face.color.b}, ${opacity})`;
+                ctx.fill();
+                
+                // Add stroke for edge definition
+                ctx.strokeStyle = `rgba(${Math.min(255, color.r + 120)}, ${Math.min(255, color.g + 120)}, ${Math.min(255, color.b + 120)}, ${opacity})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+        }
+        
+        ctx.restore();
+    }
+    
+    // Find the nearest transaction cube to a given position
     function findNearestDot(x, y) {
         let closestDot = null;
         let closestDistance = Number.MAX_VALUE;
         
-        // Calculate distance to each diamond
+        // Calculate distance to each cube
         txDots.forEach(dot => {
             const dx = dot.x - x;
             const dy = dot.y - y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Check if this is the closest diamond (using hit area based on size)
-            if (distance < closestDistance && distance < dot.size * 1.5) {
+            // Check if this is the closest cube (using hit area based on size)
+            if (distance < closestDistance && distance < dot.size * 2) {
                 closestDistance = distance;
                 closestDot = dot;
             }
@@ -794,11 +941,26 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTransaction = null;
     }
     
+    // When initializing for mobile, limit the number of transactions for better performance
+    function initMobile() {
+        // Keep fewer dots on screen for better performance on mobile
+        if (isMobile) {
+            const maxDots = isVerySmallScreen ? 30 : 50;
+            if (txDots.length > maxDots) {
+                txDots = txDots.slice(0, maxDots);
+            }
+        }
+    }
+    
     // Initialize everything
     function init() {
         initCanvas();
         initChart();
         addChartToggleButton();
+        if (isMobile) {
+            adjustContainerHeights();
+            initMobile();
+        }
         drawMatrix();
     }
     

@@ -550,6 +550,7 @@ footer a:hover {
     .volume-section {
         height: calc(30vh - 1rem);
         margin-top: 0;
+        padding-bottom: 0; /* Remove any padding that might cause space */
     }
     
     /* Adjust details panel for mobile */
@@ -563,7 +564,7 @@ footer a:hover {
     #chart-container {
         height: 100%;
         padding: 0.3rem;
-        margin-bottom: 0;
+        margin-bottom: 0; /* Remove any margin that might cause space */
     }
     
     /* Adjust detail rows for mobile */
@@ -672,4 +673,4 @@ footer a:hover {
     .volume-section {
         height: 35vh;
     }
-} 
+}

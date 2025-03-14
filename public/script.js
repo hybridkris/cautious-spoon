@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeTransaction = null;
     // Maximum number of trail positions to track per dot
     const MAX_TRAIL_LENGTH = isMobile ? 10 : 20; 
-    // Canvas clearing opacity (lower = longer trails)
-    const CANVAS_FADE_OPACITY = 0.03;
+    // Canvas clearing opacity (higher = shorter trails)
+    const CANVAS_FADE_OPACITY = 0.06; // Increased from 0.03 to make trails fade faster
     
     // Transaction data
     let allTransactions = [];
@@ -339,14 +339,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate speed based on transaction value
     // Higher value = slower movement
     function calculateSpeed(value) {
-        if (!value || value === 0) return 1;
+        if (!value || value === 0) return 1.8; // Increased base speed for zero-value transactions
         
-        // Base speed is slower on mobile
-        const baseSpeed = isMobile ? 0.7 : 1;
+        // Base speed is faster overall but still slower on mobile
+        const baseSpeed = isMobile ? 1.2 : 1.8; // Increased from 0.7/1.0 to 1.2/1.8
         
         // Use logarithmic scale to handle wide range of values
-        // Range from 0.2x to 1x of base speed (higher value = slower)
-        const speedFactor = Math.max(0.2, 1 - Math.log10(value + 1) / 4);
+        // Range from 0.4x to 1x of base speed (higher value = slower)
+        const speedFactor = Math.max(0.4, 1 - Math.log10(value + 1) / 5); // Adjusted factor calculation
         return baseSpeed * speedFactor;
     }
     
@@ -545,10 +545,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Draw each position in the trail with decreasing opacity
         dot.trail.forEach((pos, i) => {
             // Calculate opacity based on position in trail (older = more transparent)
-            const trailOpacity = mainOpacity * (1 - (i / trailLength));
+            // More aggressive opacity reduction for more transparent trails
+            const trailOpacity = mainOpacity * Math.pow(0.85, i); // Exponential decay instead of linear
             
-            // Skip drawing if nearly transparent
-            if (trailOpacity < 0.05) return;
+            // Skip drawing if nearly transparent (threshold increased)
+            if (trailOpacity < 0.08) return;
             
             // Calculate size reduction for trail (older = smaller)
             const sizeReduction = i / (trailLength * 2);
@@ -563,8 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 pos.x, pos.y, trailGlowSize
             );
             
-            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.6})`);
-            gradient.addColorStop(0.6, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.3})`);
+            // Reduced opacity values for gradient stops
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.4})`); // Reduced from 0.6
+            gradient.addColorStop(0.6, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.2})`); // Reduced from 0.3
             gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
             
             ctx.fillStyle = gradient;
@@ -572,8 +574,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.arc(pos.x, pos.y, trailGlowSize, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw the trail point
-            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.7})`;
+            // Draw the trail point with reduced opacity
+            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.5})`; // Reduced from 0.7
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, trailRadius, 0, Math.PI * 2);
             ctx.fill();

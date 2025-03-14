@@ -564,6 +564,7 @@ footer a:hover {
         padding: 0.5rem;
         max-height: 100%;
         overflow-y: auto;
+        padding-bottom: 0; /* Remove any padding that might cause space */
         margin-bottom: 0; /* Remove any margin that might cause space */
     }
     
@@ -571,6 +572,7 @@ footer a:hover {
     #chart-container {
         height: 100%;
         padding: 0.3rem;
+        padding-bottom: 0; /* Remove any padding that might cause space */
         margin-bottom: 0; /* Remove any margin that might cause space */
     }
     

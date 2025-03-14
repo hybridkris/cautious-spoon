@@ -550,7 +550,7 @@ footer a:hover {
     
     /* Line chart takes 20% of screen */
     .volume-section {
-        height: calc(30vh - 1rem);
+        height: 100%;
         margin-top: 0;
         padding-bottom: 0; /* Remove any padding that might cause space */
     }

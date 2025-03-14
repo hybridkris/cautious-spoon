@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Current time for fade calculations
         const currentTime = Date.now();
-        const fadeDuration = 2000; // 2 seconds for fade out
+        const fadeDuration = 3000; // 2 seconds for fade out
         
         // Draw each transaction cube
         txDots.forEach((dot, index) => {

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailValue = document.getElementById('detail-value');
     const etherscanLink = document.getElementById('etherscan-link');
     const totalVolumeElement = document.getElementById('total-volume');
+    const chartContainer = document.getElementById('chart-container');
     
     // Chart setup
     const chartCanvas = document.getElementById('value-chart');
@@ -26,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let dotSize = isMobile ? 4 : 6; // Smaller dots on mobile
     let dotSpacing = isMobile ? 15 : 20; // Space between dots
     let activeTransaction = null;
+    // Maximum number of trail positions to track per dot
+    const MAX_TRAIL_LENGTH = isMobile ? 10 : 20; 
+    // Canvas clearing opacity (lower = longer trails)
+    const CANVAS_FADE_OPACITY = 0.03;
     
     // Transaction data
     let allTransactions = [];
@@ -136,9 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: {
                         labels: { 
                             color: '#00ff41',
-                            boxWidth: window.innerWidth <= 768 ? 10 : 40 // Smaller legend on mobile
+                            boxWidth: window.innerWidth <= 768 ? 10 : 40, // Smaller legend on mobile
+                            padding: window.innerWidth <= 480 ? 5 : 10 // Smaller padding on mobile
                         },
-                        display: window.innerWidth > 480 // Hide legend on very small screens
+                        display: window.innerWidth > 480 ? true : false // Hide legend on very small screens
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 20, 0, 0.9)',
@@ -169,10 +175,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 animation: {
-                    duration: 1000
+                    duration: isMobile ? 500 : 1000 // Faster animations on mobile
                 }
             }
         });
+    }
+    
+    // Add chart expand/collapse toggle button for mobile
+    function addChartToggleButton() {
+        if (isMobile) {
+            const toggleButton = document.createElement('button');
+            toggleButton.textContent = 'Expand Chart';
+            toggleButton.className = 'chart-toggle-btn';
+            toggleButton.addEventListener('click', toggleChartSize);
+            chartContainer.appendChild(toggleButton);
+        }
+    }
+    
+    // Toggle chart size between normal and expanded
+    function toggleChartSize() {
+        const isExpanded = chartContainer.classList.toggle('expanded');
+        const toggleButton = document.querySelector('.chart-toggle-btn');
+        
+        if (isExpanded) {
+            toggleButton.textContent = 'Collapse Chart';
+        } else {
+            toggleButton.textContent = 'Expand Chart';
+        }
+        
+        // Give time for the CSS transition to complete
+        setTimeout(() => {
+            if (valueChart) {
+                valueChart.resize();
+            }
+        }, 300);
     }
     
     // Handle window resize
@@ -336,7 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 speed: speed,
                 tx: tx,
                 color: getTransactionColor(value),
-                hash: tx.hash
+                hash: tx.hash,
+                trail: [] // Store previous positions for trail effect
             };
             
             // Add to txDots array
@@ -380,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chartData.datasets[0].data.push(totalValue);
             
             // Keep only last n data points (or fewer on mobile)
-            const maxDataPoints = window.innerWidth <= 480 ? 10 : (window.innerWidth <= 768 ? 15 : 20);
+            const maxDataPoints = window.innerWidth <= 480 ? 8 : (window.innerWidth <= 768 ? 12 : 20);
             if (chartData.labels.length > maxDataPoints) {
                 chartData.labels.shift();
                 chartData.datasets[0].data.shift();
@@ -434,12 +471,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Draw the matrix animation (dots moving horizontally)
     function drawMatrix() {
-        // Clear canvas with slight fade effect (leave trails)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        // Clear canvas with very slight fade effect (longer trails)
+        ctx.fillStyle = `rgba(0, 0, 0, ${CANVAS_FADE_OPACITY})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Draw each transaction dot
         txDots.forEach((dot, index) => {
+            // Save previous position before moving
+            if (dot.trail.length >= MAX_TRAIL_LENGTH) {
+                dot.trail.pop(); // Remove oldest position if we exceed max trail length
+            }
+            dot.trail.unshift({x: dot.x, y: dot.y}); // Add current position to start of trail
+            
             // Move dot leftward (from right to left)
             dot.x -= dot.speed;
             
@@ -454,6 +497,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Check if dot is active
             const isActive = activeTransaction && activeTransaction.hash === dot.hash;
+            
+            // Draw trail first (so it appears behind the main dot)
+            drawDotTrail(dot, opacity, isActive);
             
             // Draw glow effect (larger for bigger values)
             const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
@@ -486,6 +532,52 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Request next frame
         requestAnimationFrame(drawMatrix);
+    }
+    
+    // Draw the trail behind a dot
+    function drawDotTrail(dot, mainOpacity, isActive) {
+        const color = dot.color;
+        const trailLength = dot.trail.length;
+        
+        // Skip if no trail has formed yet
+        if (trailLength === 0) return;
+        
+        // Draw each position in the trail with decreasing opacity
+        dot.trail.forEach((pos, i) => {
+            // Calculate opacity based on position in trail (older = more transparent)
+            const trailOpacity = mainOpacity * (1 - (i / trailLength));
+            
+            // Skip drawing if nearly transparent
+            if (trailOpacity < 0.05) return;
+            
+            // Calculate size reduction for trail (older = smaller)
+            const sizeReduction = i / (trailLength * 2);
+            const trailRadius = Math.max(1, dot.radius * (1 - sizeReduction));
+            
+            // Draw smaller glow for trail points
+            const trailGlowSize = Math.max(3, (isActive ? dot.glowSize * 1.2 : dot.glowSize) * (1 - sizeReduction));
+            
+            // Draw glow for trail point
+            const gradient = ctx.createRadialGradient(
+                pos.x, pos.y, 0,
+                pos.x, pos.y, trailGlowSize
+            );
+            
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.6})`);
+            gradient.addColorStop(0.6, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.3})`);
+            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, trailGlowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw the trail point
+            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.7})`;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, trailRadius, 0, Math.PI * 2);
+            ctx.fill();
+        });
     }
     
     // Find the nearest transaction dot to a given position
@@ -631,6 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function init() {
         initCanvas();
         initChart();
+        addChartToggleButton();
         drawMatrix();
     }
     

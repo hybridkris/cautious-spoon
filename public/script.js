@@ -19,10 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartCanvas = document.getElementById('value-chart');
     const chartCtx = chartCanvas.getContext('2d');
     
+    // Detect if mobile (add this back)
+    const isMobile = window.innerWidth <= 768;
+    const isVerySmallScreen = window.innerWidth <= 480;
+    
     // Matrix settings
     let txDots = [];
-    let cubeSize = 12; // Size for cubes
-    let dotSpacing = 40; // Spacing between cubes
+    let cubeSize = isMobile ? 10 : 12; // Size for cubes - smaller on mobile
+    let dotSpacing = isMobile ? 30 : 40; // Spacing between cubes
     let activeTransaction = null;
     // Canvas clearing opacity (complete clear for no trails)
     const CANVAS_FADE_OPACITY = 1.0; // Full opacity for complete clear each frame
@@ -81,6 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
+        // Adjust cube size based on screen size
+        cubeSize = isMobile ? (isVerySmallScreen ? 8 : 10) : 12;
+        dotSpacing = isMobile ? 30 : 40;
+        
         // Initialize empty txDots array
         txDots = [];
     }
@@ -112,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             maxRotation: 0,
                             autoSkip: true,
-                            maxTicksLimit: 10,
+                            maxTicksLimit: isMobile ? 5 : 10, // Show fewer labels on mobile
                             padding: 4 // Reduced padding
                         },
                         grid: { color: 'rgba(80, 250, 255, 0.15)' }
@@ -136,13 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: {
                         labels: { 
                             color: 'rgba(80, 250, 255, 1)', // Neon cyan
-                            boxWidth: 40,
+                            boxWidth: isMobile ? 20 : 40, // Smaller box on mobile
                             padding: 6, // Reduced padding
                             font: {
-                                size: 11 // Smaller font
+                                size: isMobile ? 9 : 11 // Smaller font on mobile
                             }
                         },
-                        display: true
+                        display: !isVerySmallScreen // Hide legend on very small screens
                     },
                     tooltip: {
                         backgroundColor: 'rgba(25, 25, 50, 0.9)', // Dark blue
@@ -173,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 animation: {
-                    duration: 600 // Faster animations
+                    duration: isMobile ? 400 : 600 // Faster animations on mobile
                 }
             }
         });
@@ -181,28 +189,54 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add chart setup
     function setupChartAndUI() {
-        // Make sure chart is properly sized
-        setTimeout(() => {
-            if (valueChart) {
-                valueChart.resize();
-            }
-        }, 100);
+        // Mobile specific adjustments
+        if (isMobile) {
+            // Make sure chart is properly sized
+            setTimeout(() => {
+                if (valueChart) {
+                    valueChart.resize();
+                }
+            }, 100);
+            
+            // Further resize after a bit to ensure the layout is fully rendered
+            setTimeout(() => {
+                if (valueChart) {
+                    valueChart.resize();
+                }
+            }, 500);
+        } else {
+            // Desktop resize
+            setTimeout(() => {
+                if (valueChart) {
+                    valueChart.resize();
+                }
+            }, 100);
+        }
     }
     
     // Handle window resize
     window.addEventListener('resize', () => {
-        // Update canvas dimensions
-        initCanvas();
+        // Update mobile detection
+        const wasMobile = isMobile;
+        const newIsMobile = window.innerWidth <= 768;
         
-        // Reinitialize chart
-        if (valueChart) {
-            valueChart.destroy();
-            initChart();
+        // Only reload if mobile status changed (major layout change)
+        if (wasMobile !== newIsMobile) {
+            location.reload(); // Simplest way to handle major layout change
+        } else {
+            // Update canvas dimensions
+            initCanvas();
             
-            // Make sure chart is properly sized
-            setTimeout(() => {
-                valueChart.resize();
-            }, 100);
+            // Reinitialize chart
+            if (valueChart) {
+                valueChart.destroy();
+                initChart();
+                
+                // Make sure chart is properly sized
+                setTimeout(() => {
+                    valueChart.resize();
+                }, 100);
+            }
         }
     });
     
@@ -443,8 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
             chartData.labels.push(`Block ${blockNumber}`);
             chartData.datasets[0].data.push(totalValue);
             
-            // Keep only last n data points
-            const maxDataPoints = 20;
+            // Keep only last n data points - fewer on mobile for better visibility
+            const maxDataPoints = isMobile ? (isVerySmallScreen ? 8 : 12) : 20;
             if (chartData.labels.length > maxDataPoints) {
                 chartData.labels.shift();
                 chartData.datasets[0].data.shift();
@@ -501,6 +535,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear canvas completely each frame (no trails)
         ctx.fillStyle = `rgba(0, 0, 0, ${CANVAS_FADE_OPACITY})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // For mobile devices, limit the number of dots for better performance
+        if (isMobile && txDots.length > (isVerySmallScreen ? 30 : 50)) {
+            txDots = txDots.slice(0, isVerySmallScreen ? 30 : 50);
+        }
         
         // Draw each transaction cube
         txDots.forEach((dot, index) => {
@@ -748,7 +787,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Handle mouse exit from canvas
     function handleMouseExit() {
-        hideTransactionDetails();
+        // On desktop, hide details when mouse leaves
+        if (!isMobile) {
+            hideTransactionDetails();
+        }
     }
     
     // Mouse event handlers
@@ -759,6 +801,23 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseleave', () => {
         handleMouseExit();
     });
+    
+    // Touch event handlers for mobile
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            handleInteraction(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            handleInteraction(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
     
     // Show transaction details in the details panel
     function showTransactionDetails(tx) {
@@ -787,10 +846,19 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryColor = 'rgba(80, 250, 255, 1)'; // Neon cyan
         }
         
-        // Update details content
-        detailHash.textContent = tx.hash;
-        detailFrom.textContent = tx.from;
-        detailTo.textContent = tx.to || 'Contract Creation';
+        // Truncate addresses for mobile
+        const truncateAddress = (address, length = 12) => {
+            if (!address) return '';
+            if (isMobile && address.length > length * 2) {
+                return `${address.substring(0, length)}...${address.substring(address.length - length)}`;
+            }
+            return address;
+        };
+        
+        // Update details content - truncate addresses on mobile
+        detailHash.textContent = truncateAddress(tx.hash);
+        detailFrom.textContent = truncateAddress(tx.from);
+        detailTo.textContent = truncateAddress(tx.to || 'Contract Creation');
         detailValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
         detailBlock.textContent = tx.blockNumber;
         
@@ -812,6 +880,19 @@ document.addEventListener('DOMContentLoaded', () => {
         initCanvas();
         initChart();
         setupChartAndUI();
+        
+        // Add mobile optimizations
+        if (isMobile) {
+            // Add clear button for mobile
+            if (!document.querySelector('.clear-details-btn')) {
+                const clearButton = document.createElement('button');
+                clearButton.textContent = 'Hide Details';
+                clearButton.className = 'clear-details-btn';
+                clearButton.addEventListener('click', hideTransactionDetails);
+                detailsPanel.appendChild(clearButton);
+            }
+        }
+        
         drawMatrix();
     }
     

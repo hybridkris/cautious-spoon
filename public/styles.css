@@ -493,4 +493,211 @@ footer a:hover {
     color: rgba(80, 250, 255, 1);
     word-break: break-all;
     flex: 1;
+}
+
+/* Clear details button for mobile */
+.clear-details-btn {
+    align-self: center;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: rgba(25, 25, 50, 0.7);
+    border: 1px solid var(--synthwave-purple);
+    border-radius: 4px;
+    color: var(--synthwave-cyan);
+    font-family: var(--terminal-font);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-shadow: 0 0 5px var(--synthwave-cyan);
+}
+
+.clear-details-btn:hover {
+    background-color: var(--synthwave-blue);
+    box-shadow: 0 0 15px var(--synthwave-pink);
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+    /* Content container adjustments */
+    .container {
+        padding: 0.5rem;
+    }
+    
+    /* Header adjustments for mobile */
+    header {
+        flex-wrap: wrap;
+        margin-bottom: 0.4rem;
+        padding-bottom: 0.3rem;
+    }
+    
+    .header-left h1 {
+        font-size: 1.2rem;
+    }
+    
+    .header-controls {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    #connection-status, #latest-block {
+        font-size: 0.8rem;
+    }
+    
+    /* Mobile vertical layout */
+    .content {
+        gap: 0.4rem;
+        height: calc(100vh - 80px); /* Account for header */
+    }
+    
+    .main-content-wrapper {
+        flex-direction: column;
+        height: 80vh;
+        gap: 0.4rem;
+    }
+    
+    /* Block visualization takes 50% of screen */
+    .visualization-section {
+        width: 100%;
+        height: 50%;
+    }
+    
+    /* Block data takes 30% of screen */
+    .details-section {
+        width: 100%;
+        height: 30%;
+    }
+    
+    /* Line chart takes 20% of screen */
+    .volume-section {
+        height: 20%;
+        margin-top: 0.3rem;
+    }
+    
+    /* Adjust details panel for mobile */
+    #details-panel {
+        padding: 0.5rem;
+        max-height: 100%;
+        overflow-y: auto;
+    }
+    
+    /* Compact chart for mobile */
+    #chart-container {
+        height: 100%;
+        padding: 0.3rem;
+    }
+    
+    /* Adjust detail rows for mobile */
+    .detail-row {
+        font-size: 0.75rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .detail-label {
+        width: 60px;
+    }
+    
+    /* Chart header adjustments */
+    .volume-header {
+        height: 1.1rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .volume-title {
+        font-size: 0.9rem;
+    }
+    
+    #total-volume {
+        font-size: 0.9rem;
+    }
+    
+    /* Panel title adjustments */
+    .panel-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    /* Adjust the clear button size for mobile */
+    .clear-details-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        margin-top: 0.4rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    /* Fix potential overflow issues in transaction details */
+    .detail-value {
+        max-width: calc(100% - 65px);
+    }
+    
+    /* Improve touch targets */
+    #etherscan-link {
+        padding: 0.4rem 0.8rem;
+        display: block;
+        text-align: center;
+        margin-top: 0.8rem;
+    }
+}
+
+/* Small mobile devices (under 480px) */
+@media (max-width: 480px) {
+    .header-left h1 {
+        font-size: 1rem;
+    }
+    
+    #connection-status, #latest-block {
+        font-size: 0.7rem;
+    }
+    
+    /* Adjust cube size for visibility on small screens */
+    #cubeSize {
+        font-size: 10px;
+    }
+}
+
+/* iPhone SE and other very small screens */
+@media (max-width: 375px) {
+    .header-left h1 {
+        font-size: 0.9rem;
+    }
+    
+    /* Further reduce content padding */
+    .container {
+        padding: 0.4rem;
+    }
+    
+    /* Make the transaction details more compact */
+    #details-panel {
+        padding: 0.4rem;
+    }
+    
+    .detail-row {
+        font-size: 0.7rem;
+        margin-bottom: 0.15rem;
+    }
+    
+    .detail-label {
+        width: 50px;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    .main-content-wrapper {
+        flex-direction: row;
+        height: 65vh;
+    }
+    
+    .visualization-section {
+        width: 60%;
+        height: 100%;
+    }
+    
+    .details-section {
+        width: 40%;
+        height: 100%;
+    }
+    
+    .volume-section {
+        height: 35vh;
+    }
 } 

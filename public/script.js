@@ -35,10 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTransactions = [];
     let transactionsById = {};
     
-    // Batch tracking for API calls
-    let currentBatchId = 0;
-    let previousBatchId = null;
-    
     // Transaction value color thresholds - Synthwave palette
     const VALUE_COLORS = {
         default: { r: 80, g: 250, b: 255 },     // Neon cyan (0-1 ETH)
@@ -284,10 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateLatestBlock(transactions[0].blockNumber);
         }
         
-        // Increment batch ID for this new set of transactions
-        previousBatchId = currentBatchId;
-        currentBatchId++;
-        
         // Add new transactions to our collection
         const newTransactions = transactions.filter(tx => {
             // Check if transaction already exists in our collection
@@ -295,11 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (newTransactions.length === 0) return;
-        
-        // Tag each transaction with the current batch ID
-        newTransactions.forEach(tx => {
-            tx.batchId = currentBatchId;
-        });
         
         // Add to beginning of array (newest first)
         allTransactions = [...newTransactions, ...allTransactions];
@@ -325,26 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update the value chart with new data point
         updateValueChart(newTransactions);
-        
-        // Set a timeout to remove previous batch of transactions after 5 seconds
-        if (previousBatchId !== null) {
-            setTimeout(() => {
-                removePreviousBatchTransactions(previousBatchId);
-            }, 5000);
-        }
-    }
-    
-    // Function to remove transactions from a specific batch
-    function removePreviousBatchTransactions(batchId) {
-        // Remove from the txDots array
-        txDots = txDots.filter(dot => {
-            return !dot.tx.batchId || dot.tx.batchId !== batchId;
-        });
-        
-        // If the active transaction was part of this batch, hide details
-        if (activeTransaction && activeTransaction.batchId === batchId) {
-            hideTransactionDetails();
-        }
     }
     
     // Update connection status UI
@@ -378,11 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate glow size based on transaction value
     // Higher value = larger glow, but ensure all cubes have a substantial glow
     function calculateGlowSize(value) {
-        if (!value || value === 0) return cubeSize * 2;
+        if (!value || value === 0) return cubeSize * 1.6; // Reduced from 2x
         
-        // Increased minimum glow size to ensure all cubes glow prominently
-        // Range from 2x to 3.5x of cube size
-        return Math.min(cubeSize * 3.5, cubeSize * 2 + Math.log10(value + 1) * cubeSize * 0.5);
+        // Reduced glow size range for better performance
+        // Range from 1.6x to 2.8x of cube size (reduced from 2x-3.5x)
+        return Math.min(cubeSize * 2.8, cubeSize * 1.6 + Math.log10(value + 1) * cubeSize * 0.4);
     }
     
     // Calculate speed based on transaction value and block number
@@ -577,6 +544,9 @@ document.addEventListener('DOMContentLoaded', () => {
             txDots = txDots.slice(0, isVerySmallScreen ? 30 : 50);
         }
         
+        // Array to track dots that are off-screen
+        const dotsToRemove = [];
+        
         // Draw each transaction cube
         txDots.forEach((dot, index) => {
             // Move cube leftward (from right to left)
@@ -603,14 +573,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = dot.color;
             const size = isActive ? dot.size * 1.3 : dot.size;
             
-            // Enhanced glow effect for all cubes
-            const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
+            // Enhanced glow effect for all cubes - reduced for better performance
+            const glowSize = isActive ? dot.glowSize * 1.3 : dot.glowSize;
             
-            // Apply multi-layered glow for a more prominent effect
+            // Apply multi-layered glow for a more prominent effect, but reduced intensity
             // First pass - outer glow (larger, more transparent)
             ctx.save();
-            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.5})`;
-            ctx.shadowBlur = glowSize * 1.3;
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.4})`; // Reduced opacity from 0.5 to 0.4
+            ctx.shadowBlur = glowSize * 1.2; // Reduced from 1.3 to 1.2
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             
@@ -621,8 +591,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Second pass - inner glow (smaller, more intense)
             ctx.save();
-            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
-            ctx.shadowBlur = glowSize * 0.8;
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.7})`; // Reduced opacity from 0.8 to 0.7
+            ctx.shadowBlur = glowSize * 0.7; // Reduced from 0.8 to 0.7
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             
@@ -672,11 +642,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Remove cubes that have moved off-screen to the left
+            // Check if dot has moved off-screen to the left
             if (dot.x < -50) {
-                txDots.splice(index, 1);
+                dotsToRemove.push(index);
+                
+                // If this is the active transaction, hide details
+                if (activeTransaction && activeTransaction.hash === dot.hash) {
+                    hideTransactionDetails();
+                }
             }
         });
+        
+        // Remove cubes that have moved off-screen (in reverse order to avoid index issues)
+        for (let i = dotsToRemove.length - 1; i >= 0; i--) {
+            txDots.splice(dotsToRemove[i], 1);
+        }
         
         // Request next frame
         requestAnimationFrame(drawMatrix);

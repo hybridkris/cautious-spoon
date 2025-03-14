@@ -181,78 +181,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Add chart expand/collapse toggle button for mobile
-    function addChartToggleButton() {
+    // Add chart setup for the transaction explorer
+    function setupChartAndUI() {
         if (isMobile) {
-            const toggleButton = document.createElement('button');
-            toggleButton.textContent = 'Show Chart';
-            toggleButton.className = 'chart-toggle-btn';
-            toggleButton.addEventListener('click', toggleChartVisibility);
+            // We no longer need to add a toggle button as the chart will always be visible
             
-            // Add button to the header for better visibility
-            const headerControls = document.querySelector('.header-controls') || document.querySelector('header');
-            if (headerControls) {
-                headerControls.appendChild(toggleButton);
-            } else {
-                chartContainer.appendChild(toggleButton);
-            }
-            
-            // Initially hide chart on mobile for more screen space
-            chartContainer.classList.add('hidden');
-            
-            // Adjust container heights initially
-            adjustContainerHeights();
-        }
-    }
-    
-    // Toggle chart visibility
-    function toggleChartVisibility() {
-        const isVisible = !chartContainer.classList.toggle('hidden');
-        const toggleButton = document.querySelector('.chart-toggle-btn');
-        
-        toggleButton.textContent = isVisible ? 'Hide Chart' : 'Show Chart';
-        
-        // If showing chart, resize it to fit current layout
-        if (isVisible && valueChart) {
+            // Initialize chart with mobile-optimized settings
             setTimeout(() => {
-                valueChart.resize();
+                if (valueChart) {
+                    valueChart.resize();
+                }
             }, 100);
-        }
-        
-        // Adjust container heights when chart visibility changes
-        adjustContainerHeights();
-    }
-    
-    // Adjust container heights based on chart visibility
-    function adjustContainerHeights() {
-        const matrixContainer = document.getElementById('matrix-container');
-        const detailsSection = document.querySelector('.details-section');
-        const isChartHidden = chartContainer.classList.contains('hidden');
-        
-        if (isMobile) {
-            if (matrixContainer) {
-                if (isChartHidden) {
-                    // If chart is hidden, give more space to matrix
-                    matrixContainer.classList.add('expanded');
-                } else {
-                    // If chart is visible, reduce matrix size
-                    matrixContainer.classList.remove('expanded');
-                }
-            }
             
-            // Adjust details panel height based on chart visibility
-            if (detailsSection) {
-                if (isChartHidden) {
-                    detailsSection.style.maxHeight = '35vh';
-                } else {
-                    detailsSection.style.maxHeight = '25vh';
-                    
-                    // Make sure chart is properly sized
-                    setTimeout(() => {
-                        if (valueChart) valueChart.resize();
-                    }, 100);
-                }
-            }
+            // Ensure proper display on mobile
+            const matrixContainer = document.getElementById('matrix-container');
+            const detailsSection = document.querySelector('.details-section');
+            
+            // Make sure chart is properly sized
+            setTimeout(() => {
+                if (valueChart) valueChart.resize();
+            }, 300);
         }
     }
     
@@ -274,11 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (valueChart) {
                 valueChart.destroy();
                 initChart();
-            }
-            
-            // Adjust container heights for mobile
-            if (isMobile) {
-                adjustContainerHeights();
+                
+                // Make sure chart is properly sized
+                setTimeout(() => {
+                    valueChart.resize();
+                }, 100);
             }
         }
     });
@@ -528,10 +476,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Update chart if it's visible
-        if (!chartContainer.classList.contains('hidden') || !isMobile) {
-            valueChart.update();
-        }
+        // Always update the chart since it's always visible now
+        valueChart.update();
         
         // Always update total volume display
         updateTotalVolume();
@@ -978,9 +924,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function init() {
         initCanvas();
         initChart();
-        addChartToggleButton();
+        setupChartAndUI();
         if (isMobile) {
-            adjustContainerHeights();
             initMobile();
         }
         drawMatrix();

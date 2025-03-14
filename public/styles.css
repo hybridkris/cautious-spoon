@@ -566,15 +566,23 @@ footer a:hover {
         display: flex;
         flex-direction: row;
         gap: 1rem;
-        margin-bottom: 1rem;
+        height: 70vh; /* Fixed height to allow space for chart */
     }
     
     .visualization-section {
         width: 65%;
+        height: 100%;
     }
     
     .details-section {
         width: 35%;
+        height: 100%;
+    }
+    
+    /* Chart takes the remaining space below the main content */
+    .volume-section {
+        height: calc(30vh - 2rem); /* Allocate remaining viewport height minus margins */
+        margin-top: 1rem;
     }
 }
 
@@ -584,17 +592,24 @@ footer a:hover {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
-        margin-bottom: 0.5rem;
+        height: 75vh; /* Fixed height to allow space for chart on mobile */
     }
     
-    .visualization-section, 
+    .visualization-section {
+        width: 100%;
+        height: 60%;
+    }
+    
     .details-section {
         width: 100%;
+        height: 40%;
+        overflow: hidden;
     }
     
-    .details-section {
-        max-height: 35vh;
-        overflow: hidden;
+    /* Chart takes the remaining space below the main content */
+    .volume-section {
+        height: calc(25vh - 1.5rem); /* Allocate remaining viewport height minus margins */
+        margin-top: 0.5rem;
     }
 }
 
@@ -602,74 +617,83 @@ footer a:hover {
 #matrix-container {
     position: relative;
     width: 100%;
-    height: 60vh;
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(80, 250, 255, 0.3);
     border-radius: 5px;
     overflow: hidden;
-    transition: height 0.3s ease;
 }
 
-/* For desktop, use full height of the visualization section */
-@media (min-width: 769px) {
-    #matrix-container {
-        height: calc(100vh - 170px); /* Calculate height based on viewport minus header, chart, and margins */
-        min-height: 450px;
-    }
+/* Transaction details panel */
+#details-panel {
+    padding: 1rem;
+    background-color: rgba(25, 25, 50, 0.5);
+    border: 1px solid rgba(191, 85, 255, 0.5);
+    border-radius: 5px;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* For mobile, adjust height based on chart visibility */
+/* For mobile, adjust padding of details panel */
 @media (max-width: 768px) {
-    #matrix-container {
-        height: 50vh;
-        transition: height 0.3s ease;
-    }
-    
-    #matrix-container.expanded {
-        height: 65vh;
-    }
-    
-    /* Adjust height for very small screens */
-    @media (max-height: 700px) {
-        #matrix-container {
-            height: 45vh;
-        }
-        
-        #matrix-container.expanded {
-            height: 60vh;
-        }
-    }
-}
-
-/* Chart toggle visibility styles */
-@media (max-width: 768px) {
-    /* When chart is hidden, give more space to matrix and details */
-    #chart-container.hidden + .details-section {
-        max-height: 40vh;
-    }
-    
-    /* Add smooth transitions for all height changes */
-    .volume-section,
-    #chart-container,
-    .details-section,
-    #matrix-container,
     #details-panel {
-        transition: all 0.3s ease;
+        padding: 0.5rem;
     }
+}
+
+/* Volume and chart section */
+.volume-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+#chart-container {
+    width: 100%;
+    height: calc(100% - 2rem); /* Subtract header height and margins */
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(80, 250, 255, 0.3);
+    border-radius: 5px;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Remove all .hidden classes that were previously used for toggling visibility */
+#chart-container.hidden {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* For very small screens, make everything more compact */
 @media (max-width: 480px) {
+    .main-content-wrapper {
+        height: 70vh;
+    }
+    
+    .visualization-section {
+        height: 55%;
+    }
+    
+    .details-section {
+        height: 45%;
+    }
+    
+    .volume-section {
+        height: calc(30vh - 1rem);
+    }
+    
     .content {
         gap: 0.5rem;
     }
     
-    .main-content-wrapper {
-        gap: 0.5rem;
-    }
-    
     #details-panel {
-        padding: 0.5rem;
+        padding: 0.4rem;
     }
     
     .panel-title {
@@ -687,118 +711,15 @@ footer a:hover {
     }
 }
 
-/* Volume and chart section */
-.volume-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.volume-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.volume-title {
-    font-size: 1rem;
-    color: rgba(80, 250, 255, 1);
-    margin: 0;
-}
-
-#total-volume {
-    font-size: 1.1rem;
-    font-weight: bold;
-}
-
-/* Chart container */
-#chart-container {
-    width: 100%;
-    height: 30vh;
-    background-color: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(80, 250, 255, 0.3);
-    border-radius: 5px;
-    padding: 0.5rem;
-    box-sizing: border-box;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-/* For desktop, ensure chart is below the main content */
-@media (min-width: 769px) {
-    #chart-container {
-        height: 20vh;
+/* Compact layout for small heights */
+@media (max-height: 600px) {
+    .main-content-wrapper {
+        height: 65vh;
     }
-}
-
-/* For mobile, adjust chart height */
-@media (max-width: 768px) {
-    #chart-container {
-        height: 25vh;
+    
+    .volume-section {
+        height: calc(35vh - 1rem);
     }
-}
-
-#value-chart {
-    width: 100%;
-    height: 100%;
-}
-
-/* Transaction details panel */
-#details-panel {
-    padding: 1rem;
-    background-color: rgba(25, 25, 50, 0.5);
-    border: 1px solid rgba(191, 85, 255, 0.5);
-    border-radius: 5px;
-    height: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-}
-
-/* For mobile, adjust height of details panel */
-@media (max-width: 768px) {
-    #details-panel {
-        padding: 0.5rem;
-        max-height: 30vh;
-    }
-}
-
-.panel-title {
-    margin: 0 0 0.5rem 0;
-    color: rgba(191, 85, 255, 1);
-    font-size: 1rem;
-}
-
-#tx-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    overflow-y: auto;
-    flex: 1;
-}
-
-#tx-details.hidden {
-    display: none;
-}
-
-.detail-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    font-size: 0.8rem;
-    line-height: 1.3;
-}
-
-.detail-label {
-    font-weight: bold;
-    color: rgba(255, 105, 180, 1);
-    width: 80px;
-    flex-shrink: 0;
-}
-
-.detail-value {
-    color: rgba(80, 250, 255, 1);
-    word-break: break-all;
 }
 
 /* Etherscan link styling */
@@ -859,4 +780,69 @@ footer a:hover {
     .detail-row {
         margin-bottom: 0.2rem;
     }
+}
+
+/* Volume header and title */
+.volume-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.volume-title {
+    font-size: 1rem;
+    color: rgba(80, 250, 255, 1);
+    margin: 0;
+}
+
+#total-volume {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+/* Chart canvas needs to fill its container */
+#value-chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* Transaction details panel components */
+.panel-title {
+    margin: 0 0 0.5rem 0;
+    color: rgba(191, 85, 255, 1);
+    font-size: 1rem;
+}
+
+#tx-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#tx-details.hidden {
+    display: none;
+}
+
+.detail-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: rgba(255, 105, 180, 1);
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: rgba(80, 250, 255, 1);
+    word-break: break-all;
 } 

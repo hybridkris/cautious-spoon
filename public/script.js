@@ -26,17 +26,41 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTransactions = [];
     let transactionsByColumn = {};
     
+    // Transaction value color thresholds
+    const VALUE_COLORS = {
+        default: { r: 0, g: 255, b: 65 },     // Green (0-1 ETH)
+        medium: { r: 255, g: 255, b: 0 },     // Yellow (1-10 ETH)
+        high: { r: 255, g: 165, b: 0 },       // Orange (10-100 ETH)
+        veryHigh: { r: 255, g: 0, b: 0 }      // Red (>100 ETH)
+    };
+    
     // Chart data
     const chartData = {
         labels: [],
         datasets: [{
             label: 'Transaction Value (ETH)',
             data: [],
-            borderColor: '#00ff41',
+            borderColor: 'rgba(0, 255, 65, 1)',
             backgroundColor: 'rgba(0, 255, 65, 0.1)',
             borderWidth: 2,
             tension: 0.4,
-            fill: true
+            fill: true,
+            segment: {
+                borderColor: function(context) {
+                    const value = context.p1.parsed.y;
+                    if (value >= 100) return 'rgba(255, 0, 0, 1)';       // Red
+                    if (value >= 10) return 'rgba(255, 165, 0, 1)';      // Orange
+                    if (value >= 1) return 'rgba(255, 255, 0, 1)';       // Yellow
+                    return 'rgba(0, 255, 65, 1)';                        // Green
+                },
+                backgroundColor: function(context) {
+                    const value = context.p1.parsed.y;
+                    if (value >= 100) return 'rgba(255, 0, 0, 0.1)';     // Red
+                    if (value >= 10) return 'rgba(255, 165, 0, 0.1)';    // Orange
+                    if (value >= 1) return 'rgba(255, 255, 0, 0.1)';     // Yellow
+                    return 'rgba(0, 255, 65, 0.1)';                      // Green
+                }
+            }
         }]
     };
     
@@ -62,7 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 chars: [],
                 y: 0,
                 speed: 0,
-                tx: null
+                tx: null,
+                color: VALUE_COLORS.default
             };
         }
     }
@@ -195,6 +220,26 @@ document.addEventListener('DOMContentLoaded', () => {
         latestBlockElement.textContent = `Latest Block: ${blockNumber.toLocaleString()}`;
     }
     
+    // Get color based on transaction value
+    function getTransactionColor(value) {
+        if (!value || value === 0) return VALUE_COLORS.default;
+        
+        if (value >= 100) return VALUE_COLORS.veryHigh;      // Red for >100 ETH
+        if (value >= 10) return VALUE_COLORS.high;           // Orange for >10 ETH
+        if (value >= 1) return VALUE_COLORS.medium;          // Yellow for >1 ETH
+        return VALUE_COLORS.default;                         // Green for <1 ETH
+    }
+    
+    // Calculate brightness based on transaction value
+    // Higher value = higher brightness
+    function calculateBrightness(value) {
+        if (!value || value === 0) return 0.5;
+        
+        // Use logarithmic scale for brightness to handle wide range of values
+        // Range from 0.5 to 1.0
+        return Math.min(1, 0.5 + Math.log10(value + 1) / 4);
+    }
+    
     // Add transactions to the matrix visualization
     function addTransactionsToMatrix(transactions) {
         transactions.forEach(tx => {
@@ -231,22 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 y: 0,
                 speed: speed,
                 tx: tx,
-                brightness: calculateBrightness(tx.value)
+                brightness: calculateBrightness(tx.value),
+                color: getTransactionColor(tx.value)
             };
             
             // Store transaction by column for tooltip lookup
             transactionsByColumn[columnIndex] = tx;
         });
-    }
-    
-    // Calculate brightness based on transaction value
-    // Higher value = higher brightness
-    function calculateBrightness(value) {
-        if (!value || value === 0) return 0.5;
-        
-        // Use logarithmic scale for brightness to handle wide range of values
-        // Range from 0.5 to 1.0
-        return Math.min(1, 0.5 + Math.log10(value + 1) / 4);
     }
     
     // Update the value chart with new transaction data
@@ -293,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Calculate brightness based on transaction value
             const brightness = column.brightness;
+            const color = column.color;
             
             // Draw each character in the column
             for (let j = 0; j < column.chars.length; j++) {
@@ -305,12 +342,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Determine color based on value and position
                     if (isHead) {
-                        // Head is white-green
-                        ctx.fillStyle = `rgba(180, 255, 180, ${brightness})`;
+                        // Head is brighter version of the color
+                        ctx.fillStyle = `rgba(${color.r + 50}, ${color.g + 50}, ${color.b + 50}, ${brightness})`;
                     } else {
-                        // Trailing characters are green with decreasing opacity
+                        // Trailing characters are base color with decreasing opacity
                         const opacity = brightness * Math.max(0.1, 1 - j * 0.1);
-                        ctx.fillStyle = `rgba(0, 255, 65, ${opacity})`;
+                        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
                     }
                     
                     ctx.font = `${fontSize}px "Courier New", monospace`;
@@ -376,11 +413,30 @@ document.addEventListener('DOMContentLoaded', () => {
             maximumFractionDigits: 6
         });
         
+        // Determine value category text and color
+        let valueCategory = '';
+        let categoryColor = '';
+        
+        const value = tx.value || 0;
+        if (value >= 100) {
+            valueCategory = 'Very High';
+            categoryColor = 'rgba(255, 0, 0, 1)'; // Red
+        } else if (value >= 10) {
+            valueCategory = 'High';
+            categoryColor = 'rgba(255, 165, 0, 1)'; // Orange
+        } else if (value >= 1) {
+            valueCategory = 'Medium';
+            categoryColor = 'rgba(255, 255, 0, 1)'; // Yellow
+        } else {
+            valueCategory = 'Low';
+            categoryColor = 'rgba(0, 255, 65, 1)'; // Green
+        }
+        
         // Update tooltip content
         tooltipHash.textContent = tx.hash;
         tooltipFrom.textContent = tx.from;
         tooltipTo.textContent = tx.to || 'Contract Creation';
-        tooltipValue.textContent = `${formattedValue} ETH`;
+        tooltipValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
         tooltipBlock.textContent = tx.blockNumber;
         
         // Position tooltip near cursor but not under it

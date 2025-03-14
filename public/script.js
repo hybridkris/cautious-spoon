@@ -4,12 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const latestBlockElement = document.getElementById('latest-block');
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
-    const tooltip = document.getElementById('tx-tooltip');
-    const tooltipHash = document.getElementById('tooltip-hash');
-    const tooltipFrom = document.getElementById('tooltip-from');
-    const tooltipTo = document.getElementById('tooltip-to');
-    const tooltipValue = document.getElementById('tooltip-value');
-    const tooltipBlock = document.getElementById('tooltip-block');
+    const detailsPanel = document.getElementById('details-panel');
+    const txDetails = document.getElementById('tx-details');
+    const detailBlock = document.getElementById('detail-block');
+    const detailHash = document.getElementById('detail-hash');
+    const detailFrom = document.getElementById('detail-from');
+    const detailTo = document.getElementById('detail-to');
+    const detailValue = document.getElementById('detail-value');
+    const etherscanLink = document.getElementById('etherscan-link');
     const totalVolumeElement = document.getElementById('total-volume');
     
     // Chart setup
@@ -20,16 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const isMobile = window.innerWidth <= 768;
     
     // Matrix settings
-    let matrixChars = [];
-    const possibleChars = '0123456789ABCDEFabcdef'; // Hex characters for Ethereum addresses
-    let columns = 0;
-    let fontSize = isMobile ? 12 : 14; // Smaller font on mobile
-    let columnWidth = isMobile ? 15 : 20; // Smaller column width on mobile
+    let txDots = [];
+    let dotSize = isMobile ? 4 : 6; // Smaller dots on mobile
+    let dotSpacing = isMobile ? 15 : 20; // Space between dots
     let activeTransaction = null;
     
     // Transaction data
     let allTransactions = [];
-    let transactionsByColumn = {};
+    let transactionsById = {};
     
     // Transaction value color thresholds
     const VALUE_COLORS = {
@@ -78,36 +78,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize the Matrix canvas
     function initCanvas() {
         // Set canvas dimensions
-        canvas.width = window.innerWidth;
+        canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
-        // Determine column width based on screen size
-        columnWidth = window.innerWidth <= 768 ? 15 : 20;
-        fontSize = window.innerWidth <= 768 ? 12 : 14;
+        // Adjust dot size and spacing based on screen size
+        dotSize = isMobile ? 4 : 6;
+        dotSpacing = isMobile ? 15 : 20;
         
         // For very small screens
         if (window.innerWidth <= 480) {
-            columnWidth = 12;
-            fontSize = 10;
+            dotSize = 3;
+            dotSpacing = 12;
         }
         
-        // Calculate columns (one falling stream every columnWidth px)
-        columns = Math.floor(canvas.width / columnWidth);
-        
-        // Initialize empty matrix characters
-        matrixChars = [];
-        transactionsByColumn = {};
-        
-        for (let i = 0; i < columns; i++) {
-            // Each column starts empty
-            matrixChars[i] = {
-                chars: [],
-                y: 0,
-                speed: 0,
-                tx: null,
-                color: VALUE_COLORS.default
-            };
-        }
+        // Initialize empty txDots array
+        txDots = [];
     }
     
     // Initialize the value chart
@@ -192,12 +177,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Handle window resize
     window.addEventListener('resize', () => {
-        initCanvas();
+        // Update mobile detection
+        const wasMobile = isMobile;
+        const newIsMobile = window.innerWidth <= 768;
         
-        // Reinitialize chart
-        if (valueChart) {
-            valueChart.destroy();
-            initChart();
+        // Only reinitialize if mobile status changed
+        if (wasMobile !== newIsMobile) {
+            location.reload(); // Simplest way to handle major layout change
+        } else {
+            initCanvas();
+            
+            // Reinitialize chart
+            if (valueChart) {
+                valueChart.destroy();
+                initChart();
+            }
         }
     });
     
@@ -252,15 +246,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add to beginning of array (newest first)
         allTransactions = [...newTransactions, ...allTransactions];
         
+        // Update transactionsById for quick lookups
+        newTransactions.forEach(tx => {
+            transactionsById[tx.hash] = tx;
+        });
+        
         // Limit the total number of transactions to prevent memory issues
         if (allTransactions.length > 1000) {
+            const removed = allTransactions.slice(1000);
             allTransactions = allTransactions.slice(0, 1000);
+            
+            // Clean up transactionsById
+            removed.forEach(tx => {
+                delete transactionsById[tx.hash];
+            });
         }
         
         // Add new transactions to matrix
         addTransactionsToMatrix(newTransactions);
         
-        // Update the value chart with new data point (average value of new batch)
+        // Update the value chart with new data point
         updateValueChart(newTransactions);
     }
     
@@ -285,58 +290,57 @@ document.addEventListener('DOMContentLoaded', () => {
         return VALUE_COLORS.default;                         // Green for <1 ETH
     }
     
-    // Calculate brightness based on transaction value
-    // Higher value = higher brightness
-    function calculateBrightness(value) {
-        if (!value || value === 0) return 0.5;
+    // Calculate glow size based on transaction value
+    // Higher value = larger glow
+    function calculateGlowSize(value) {
+        if (!value || value === 0) return 5;
         
-        // Use logarithmic scale for brightness to handle wide range of values
-        // Range from 0.5 to 1.0
-        return Math.min(1, 0.5 + Math.log10(value + 1) / 4);
+        // Use logarithmic scale for glow to handle wide range of values
+        // Range from 5 to 20
+        return Math.min(20, 5 + Math.log10(value + 1) * 5);
+    }
+    
+    // Calculate speed based on transaction value
+    // Higher value = slower movement
+    function calculateSpeed(value) {
+        if (!value || value === 0) return 1;
+        
+        // Base speed is slower on mobile
+        const baseSpeed = isMobile ? 0.7 : 1;
+        
+        // Use logarithmic scale to handle wide range of values
+        // Range from 0.2x to 1x of base speed (higher value = slower)
+        const speedFactor = Math.max(0.2, 1 - Math.log10(value + 1) / 4);
+        return baseSpeed * speedFactor;
     }
     
     // Add transactions to the matrix visualization
     function addTransactionsToMatrix(transactions) {
         transactions.forEach(tx => {
-            // Find an available column
-            let columnIndex = Math.floor(Math.random() * columns);
-            let attempts = 0;
-            const maxAttempts = columns / 2;
+            // Calculate initial vertical position (spread across canvas height)
+            const y = Math.random() * (canvas.height - dotSize * 2) + dotSize;
             
-            // Try to find a column without an active transaction
-            while (matrixChars[columnIndex].tx !== null && attempts < maxAttempts) {
-                columnIndex = Math.floor(Math.random() * columns);
-                attempts++;
-            }
-            
-            // If all columns are occupied, overwrite one randomly
-            if (matrixChars[columnIndex].tx !== null) {
-                columnIndex = Math.floor(Math.random() * columns);
-            }
-            
-            // Calculate speed based on value (higher value = slower fall to make it easier to hover)
-            // Use logarithmic scale to handle wide range of values
-            const baseSpeed = window.innerWidth <= 768 ? 0.7 : 1; // Slower on mobile for easier interaction
+            // Calculate speed based on value (higher value = slower movement)
             const value = tx.value || 0;
-            const speed = value > 0 ? 
-                baseSpeed * (1 - Math.min(0.8, Math.log10(value + 1) / 5)) : 
-                baseSpeed;
+            const speed = calculateSpeed(value);
             
-            // Create a matrix stream with characters from the transaction hash
-            const hashChars = tx.hash.slice(2).split(''); // Remove '0x' prefix
+            // Calculate glow size based on value
+            const glowSize = calculateGlowSize(value);
             
-            // Reset this column
-            matrixChars[columnIndex] = {
-                chars: hashChars,
-                y: 0,
+            // Create a new transaction dot
+            const txDot = {
+                x: canvas.width + 10, // Start just off-screen to the right
+                y: y,
+                radius: dotSize,
+                glowSize: glowSize,
                 speed: speed,
                 tx: tx,
-                brightness: calculateBrightness(tx.value),
-                color: getTransactionColor(tx.value)
+                color: getTransactionColor(value),
+                hash: tx.hash
             };
             
-            // Store transaction by column for tooltip lookup
-            transactionsByColumn[columnIndex] = tx;
+            // Add to txDots array
+            txDots.push(txDot);
         });
     }
     
@@ -428,97 +432,107 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Draw the matrix animation
+    // Draw the matrix animation (dots moving horizontally)
     function drawMatrix() {
-        // Clear canvas
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        // Clear canvas with slight fade effect (leave trails)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw each column
-        for (let i = 0; i < columns; i++) {
-            const column = matrixChars[i];
-            const tx = column.tx;
+        // Draw each transaction dot
+        txDots.forEach((dot, index) => {
+            // Move dot leftward (from right to left)
+            dot.x -= dot.speed;
             
-            // Skip columns without transactions
-            if (!tx) continue;
+            // Set opacity based on distance from sides of screen
+            let opacity = 1;
+            const fadeDistance = 30;
             
-            // Calculate x position for this column
-            const x = i * columnWidth + columnWidth/2;
-            
-            // Calculate brightness based on transaction value
-            const brightness = column.brightness;
-            const color = column.color;
-            
-            // Draw each character in the column
-            for (let j = 0; j < column.chars.length; j++) {
-                const y = (column.y - j * fontSize) % canvas.height;
-                
-                // Only draw if character is on screen
-                if (y > 0 && y < canvas.height) {
-                    // Head character is brighter
-                    const isHead = j === 0;
-                    
-                    // Determine color based on value and position
-                    if (isHead) {
-                        // Head is brighter version of the color
-                        ctx.fillStyle = `rgba(${color.r + 50}, ${color.g + 50}, ${color.b + 50}, ${brightness})`;
-                    } else {
-                        // Trailing characters are base color with decreasing opacity
-                        const opacity = brightness * Math.max(0.1, 1 - j * 0.1);
-                        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
-                    }
-                    
-                    ctx.font = `${fontSize}px "Courier New", monospace`;
-                    ctx.fillText(column.chars[j], x, y);
-                }
+            // Fade in when entering from right
+            if (dot.x > canvas.width - fadeDistance) {
+                opacity = 1 - ((dot.x - (canvas.width - fadeDistance)) / fadeDistance);
             }
             
-            // Move column down
-            column.y += column.speed;
+            // Check if dot is active
+            const isActive = activeTransaction && activeTransaction.hash === dot.hash;
             
-            // If column has moved off screen, reset it
-            if (column.y > canvas.height + column.chars.length * fontSize) {
-                column.y = 0;
-                column.tx = null;
-                transactionsByColumn[i] = null;
+            // Draw glow effect (larger for bigger values)
+            const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
+            const color = dot.color;
+            const gradient = ctx.createRadialGradient(
+                dot.x, dot.y, 0,
+                dot.x, dot.y, glowSize
+            );
+            
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`);
+            gradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.6})`);
+            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw the dot
+            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Remove dots that have moved off-screen to the left
+            if (dot.x < -50) {
+                txDots.splice(index, 1);
             }
-        }
+        });
         
         // Request next frame
         requestAnimationFrame(drawMatrix);
     }
     
-    // Get column index from cursor/touch position
-    function getColumnIndexFromPosition(clientX) {
-        const rect = canvas.getBoundingClientRect();
-        const canvasX = clientX - rect.left;
-        return Math.floor(canvasX / columnWidth);
+    // Find the nearest transaction dot to a given position
+    function findNearestDot(x, y) {
+        let closestDot = null;
+        let closestDistance = Number.MAX_VALUE;
+        
+        // Calculate distance to each dot
+        txDots.forEach(dot => {
+            const dx = dot.x - x;
+            const dy = dot.y - y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Check if this is the closest dot
+            if (distance < closestDistance && distance < 30) { // 30px hit area
+                closestDistance = distance;
+                closestDot = dot;
+            }
+        });
+        
+        return closestDot ? closestDot.tx : null;
     }
     
-    // Handle interaction with transactions
+    // Handle mouse/touch interaction with transactions
     function handleInteraction(clientX, clientY) {
-        // Calculate which column the cursor/touch is over
-        const columnIndex = getColumnIndexFromPosition(clientX);
+        // Convert client coordinates to canvas coordinates
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = clientX - rect.left;
+        const canvasY = clientY - rect.top;
         
-        // Check if there's a transaction in this column
-        const transaction = transactionsByColumn[columnIndex];
+        // Find the nearest transaction
+        const transaction = findNearestDot(canvasX, canvasY);
         
         if (transaction) {
-            // Show tooltip with transaction details
-            showTooltip(transaction, clientX, clientY);
+            // Show transaction details in the details panel
+            showTransactionDetails(transaction);
             
-            // Make the current active transaction
+            // Make this the active transaction
             activeTransaction = transaction;
-            
-            // Create a blinking effect for the active column
-            if (matrixChars[columnIndex]) {
-                // Temporarily increase brightness
-                matrixChars[columnIndex].brightness = 1;
-            }
-        } else {
-            // Hide tooltip
-            hideTooltip();
-            activeTransaction = null;
+        }
+    }
+    
+    // Handle mouse exit from canvas
+    function handleMouseExit() {
+        // On desktop, hide details when mouse leaves
+        if (!isMobile) {
+            hideTransactionDetails();
         }
     }
     
@@ -528,8 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     canvas.addEventListener('mouseleave', () => {
-        hideTooltip();
-        activeTransaction = null;
+        handleMouseExit();
     });
     
     // Touch event handlers for mobile
@@ -549,16 +562,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, { passive: false });
     
-    canvas.addEventListener('touchend', () => {
-        // Don't hide tooltip immediately on mobile, so users can read it
-        setTimeout(() => {
-            hideTooltip();
-            activeTransaction = null;
-        }, 1500);
-    });
+    // Add a button to clear details on mobile
+    if (isMobile) {
+        const clearButton = document.createElement('button');
+        clearButton.textContent = 'Hide Details';
+        clearButton.className = 'clear-details-btn';
+        clearButton.addEventListener('click', hideTransactionDetails);
+        detailsPanel.appendChild(clearButton);
+    }
     
-    // Show tooltip with transaction details
-    function showTooltip(tx, x, y) {
+    // Show transaction details in the details panel
+    function showTransactionDetails(tx) {
         // Format the value with 6 decimal places max
         const formattedValue = (tx.value || 0).toLocaleString(undefined, {
             minimumFractionDigits: 0,
@@ -593,59 +607,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return address;
         };
         
-        // Update tooltip content
-        tooltipHash.textContent = truncateAddress(tx.hash);
-        tooltipFrom.textContent = truncateAddress(tx.from);
-        tooltipTo.textContent = truncateAddress(tx.to || 'Contract Creation');
-        tooltipValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
-        tooltipBlock.textContent = tx.blockNumber;
+        // Update details content
+        detailHash.textContent = truncateAddress(tx.hash);
+        detailFrom.textContent = truncateAddress(tx.from);
+        detailTo.textContent = truncateAddress(tx.to || 'Contract Creation');
+        detailValue.innerHTML = `${formattedValue} ETH <span style="color:${categoryColor};font-weight:bold;margin-left:5px;">(${valueCategory})</span>`;
+        detailBlock.textContent = tx.blockNumber;
         
-        // Position tooltip logic
-
-        // Tooltip sizing
-        let tooltipWidth, tooltipHeight;
-        if (window.innerWidth <= 480) {
-            // Smaller tooltip on mobile (full-width with margin)
-            tooltipWidth = window.innerWidth - 30;
-            tooltipHeight = 180;
-            
-            // For smaller screens, position tooltip at bottom center
-            tooltip.style.left = '15px';
-            tooltip.style.top = `${window.innerHeight - tooltipHeight - 100}px`;
-        } else {
-            // Desktop positioning
-            tooltipWidth = Math.min(450, window.innerWidth * 0.8);
-            tooltipHeight = 150;
-            
-            // Calculate position to avoid going off-screen
-            let posX = x + 15;
-            let posY = y + 15;
-            
-            // Adjust if too close to right edge
-            if (posX + tooltipWidth > window.innerWidth) {
-                posX = x - tooltipWidth - 15;
-            }
-            
-            // Adjust if too close to bottom edge
-            if (posY + tooltipHeight > window.innerHeight) {
-                posY = y - tooltipHeight - 15;
-            }
-            
-            // Set position
-            tooltip.style.left = `${posX}px`;
-            tooltip.style.top = `${posY}px`;
-        }
+        // Update Etherscan link
+        etherscanLink.href = `https://etherscan.io/tx/${tx.hash}`;
         
-        // Set width
-        tooltip.style.maxWidth = `${tooltipWidth}px`;
-        
-        // Show tooltip
-        tooltip.classList.remove('hidden');
+        // Show the details
+        txDetails.classList.remove('hidden');
     }
     
-    // Hide tooltip
-    function hideTooltip() {
-        tooltip.classList.add('hidden');
+    // Hide transaction details
+    function hideTransactionDetails() {
+        txDetails.classList.add('hidden');
+        activeTransaction = null;
     }
     
     // Initialize everything

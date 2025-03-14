@@ -23,34 +23,42 @@
     </header>
 
     <main>
-        <!-- Matrix canvas for falling characters -->
-        <div id="matrix-container">
-            <canvas id="matrix-canvas"></canvas>
-        </div>
+        <div class="split-container">
+            <!-- Left/Top panel: Matrix visualization -->
+            <div id="matrix-panel">
+                <canvas id="matrix-canvas"></canvas>
+            </div>
 
-        <!-- Tooltip for transaction details -->
-        <div id="tx-tooltip" class="hidden">
-            <div class="tooltip-header">Transaction Details</div>
-            <div class="tooltip-content">
-                <div class="tooltip-row">
-                    <span class="label">Hash:</span>
-                    <span id="tooltip-hash" class="value"></span>
+            <!-- Right/Bottom panel: Transaction details -->
+            <div id="details-panel">
+                <div class="details-header">
+                    <h2>Transaction Details</h2>
+                    <div class="select-tx-prompt">Hover over a transaction dot to view details</div>
                 </div>
-                <div class="tooltip-row">
-                    <span class="label">From:</span>
-                    <span id="tooltip-from" class="value"></span>
-                </div>
-                <div class="tooltip-row">
-                    <span class="label">To:</span>
-                    <span id="tooltip-to" class="value"></span>
-                </div>
-                <div class="tooltip-row">
-                    <span class="label">Value:</span>
-                    <span id="tooltip-value" class="value"></span>
-                </div>
-                <div class="tooltip-row">
-                    <span class="label">Block:</span>
-                    <span id="tooltip-block" class="value"></span>
+                <div id="tx-details" class="hidden">
+                    <div class="details-row">
+                        <span class="label">Block:</span>
+                        <span id="detail-block" class="value"></span>
+                    </div>
+                    <div class="details-row">
+                        <span class="label">Hash:</span>
+                        <span id="detail-hash" class="value"></span>
+                    </div>
+                    <div class="details-row">
+                        <span class="label">From:</span>
+                        <span id="detail-from" class="value"></span>
+                    </div>
+                    <div class="details-row">
+                        <span class="label">To:</span>
+                        <span id="detail-to" class="value"></span>
+                    </div>
+                    <div class="details-row">
+                        <span class="label">Value:</span>
+                        <span id="detail-value" class="value"></span>
+                    </div>
+                    <div class="details-link">
+                        <a id="etherscan-link" href="#" target="_blank">View on Etherscan <i class="fas fa-external-link-alt"></i></a>
+                    </div>
                 </div>
             </div>
         </div>

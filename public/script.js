@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTransactions = [];
     let transactionsById = {};
     
-    // Transaction value color thresholds
+    // Transaction value color thresholds - Synthwave palette
     const VALUE_COLORS = {
-        default: { r: 0, g: 255, b: 65 },     // Green (0-1 ETH)
-        medium: { r: 255, g: 255, b: 0 },     // Yellow (1-10 ETH)
-        high: { r: 255, g: 165, b: 0 },       // Orange (10-100 ETH)
-        veryHigh: { r: 255, g: 0, b: 0 }      // Red (>100 ETH)
+        default: { r: 80, g: 250, b: 255 },     // Neon cyan (0-1 ETH)
+        medium: { r: 255, g: 105, b: 180 },     // Hot pink (1-10 ETH)
+        high: { r: 191, g: 85, b: 255 },        // Neon purple (10-100 ETH)
+        veryHigh: { r: 255, g: 50, b: 50 }      // Bright red (>100 ETH)
     };
     
     // Chart data
@@ -58,25 +58,25 @@ document.addEventListener('DOMContentLoaded', () => {
         datasets: [{
             label: 'Total Block Value (ETH)',
             data: [],
-            borderColor: 'rgba(0, 255, 65, 1)',
-            backgroundColor: 'rgba(0, 255, 65, 0.1)',
+            borderColor: 'rgba(80, 250, 255, 1)',
+            backgroundColor: 'rgba(80, 250, 255, 0.1)',
             borderWidth: 2,
             tension: 0.4,
             fill: true,
             segment: {
                 borderColor: function(context) {
                     const value = context.p1.parsed.y;
-                    if (value >= 1000) return 'rgba(255, 0, 0, 1)';      // Red
-                    if (value >= 100) return 'rgba(255, 165, 0, 1)';     // Orange
-                    if (value >= 10) return 'rgba(255, 255, 0, 1)';      // Yellow
-                    return 'rgba(0, 255, 65, 1)';                        // Green
+                    if (value >= 1000) return 'rgba(255, 50, 50, 1)';        // Bright red
+                    if (value >= 100) return 'rgba(191, 85, 255, 1)';        // Neon purple
+                    if (value >= 10) return 'rgba(255, 105, 180, 1)';        // Hot pink
+                    return 'rgba(80, 250, 255, 1)';                          // Neon cyan
                 },
                 backgroundColor: function(context) {
                     const value = context.p1.parsed.y;
-                    if (value >= 1000) return 'rgba(255, 0, 0, 0.1)';    // Red
-                    if (value >= 100) return 'rgba(255, 165, 0, 0.1)';   // Orange
-                    if (value >= 10) return 'rgba(255, 255, 0, 0.1)';    // Yellow
-                    return 'rgba(0, 255, 65, 0.1)';                      // Green
+                    if (value >= 1000) return 'rgba(255, 50, 50, 0.1)';      // Bright red
+                    if (value >= 100) return 'rgba(191, 85, 255, 0.1)';      // Neon purple
+                    if (value >= 10) return 'rgba(255, 105, 180, 0.1)';      // Hot pink
+                    return 'rgba(80, 250, 255, 0.1)';                        // Neon cyan
                 }
             }
         }]
@@ -124,17 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 scales: {
                     x: {
                         ticks: { 
-                            color: '#00ff41',
+                            color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             maxRotation: 0,
                             autoSkip: true,
                             maxTicksLimit: window.innerWidth <= 768 ? 5 : 10 // Fewer labels on mobile
                         },
-                        grid: { color: 'rgba(0, 255, 65, 0.1)' }
+                        grid: { color: 'rgba(80, 250, 255, 0.15)' }
                     },
                     y: {
                         beginAtZero: true,
                         ticks: { 
-                            color: '#00ff41',
+                            color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             callback: function(value) {
                                 // Format large numbers with K (thousands) or M (millions)
                                 if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
@@ -142,24 +142,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return value;
                             }
                         },
-                        grid: { color: 'rgba(0, 255, 65, 0.1)' }
+                        grid: { color: 'rgba(80, 250, 255, 0.15)' }
                     }
                 },
                 plugins: {
                     legend: {
                         labels: { 
-                            color: '#00ff41',
+                            color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             boxWidth: window.innerWidth <= 768 ? 10 : 40, // Smaller legend on mobile
                             padding: window.innerWidth <= 480 ? 5 : 10 // Smaller padding on mobile
                         },
                         display: window.innerWidth > 480 ? true : false // Hide legend on very small screens
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 20, 0, 0.9)',
-                        borderColor: '#00ff41',
+                        backgroundColor: 'rgba(25, 25, 50, 0.9)', // Dark blue
+                        borderColor: 'rgba(191, 85, 255, 1)', // Neon purple
                         borderWidth: 1,
-                        titleColor: '#00ff41',
-                        bodyColor: '#00ff41',
+                        titleColor: 'rgba(255, 105, 180, 1)', // Hot pink
+                        bodyColor: 'rgba(80, 250, 255, 1)', // Neon cyan
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
@@ -317,6 +317,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateConnectionStatus(status, text) {
         connectionStatus.className = status;
         connectionStatus.innerHTML = `<i class="fas fa-circle"></i> ${text}`;
+        
+        // Add synthwave colors based on status
+        if (status === 'connected') {
+            connectionStatus.style.color = 'rgba(80, 250, 255, 1)'; // Neon cyan for connected
+        } else {
+            connectionStatus.style.color = 'rgba(255, 50, 50, 1)'; // Bright red for disconnected/error
+        }
     }
     
     // Update latest block number UI
@@ -347,15 +354,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate speed based on transaction value
     // Higher value = slower movement
     function calculateSpeed(value) {
-        if (!value || value === 0) return 3.0; // Further increased base speed for zero-value transactions
+        // Apply 60% speed factor to slow down all movement
+        const speedFactor = 0.6;
+        
+        if (!value || value === 0) return 3.0 * speedFactor; // Slowed base speed for zero-value transactions
         
         // Base speed is much faster overall but still slightly slower on mobile
-        const baseSpeed = isMobile ? 2.0 : 3.0; // Significantly increased from previous values
+        const baseSpeed = isMobile ? 2.0 * speedFactor : 3.0 * speedFactor; // Slowed significantly
         
         // Use logarithmic scale to handle wide range of values
         // Range from 0.5x to 1x of base speed (higher value = slower)
-        const speedFactor = Math.max(0.5, 1 - Math.log10(value + 1) / 6); // Adjusted factor for faster overall movement
-        return baseSpeed * speedFactor;
+        const valueSpeedFactor = Math.max(0.5, 1 - Math.log10(value + 1) / 6);
+        return baseSpeed * valueSpeedFactor;
     }
     
     // Add transactions to the matrix visualization
@@ -468,15 +478,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update the display
         totalVolumeElement.textContent = formattedVolume;
         
-        // Color the text based on the volume
+        // Color the text based on the volume - synthwave colors
         if (totalVolume >= 10000) {
-            totalVolumeElement.style.color = 'rgba(255, 0, 0, 1)'; // Red
+            totalVolumeElement.style.color = 'rgba(255, 50, 50, 1)'; // Bright red
         } else if (totalVolume >= 1000) {
-            totalVolumeElement.style.color = 'rgba(255, 165, 0, 1)'; // Orange
+            totalVolumeElement.style.color = 'rgba(191, 85, 255, 1)'; // Neon purple
         } else if (totalVolume >= 100) {
-            totalVolumeElement.style.color = 'rgba(255, 255, 0, 1)'; // Yellow
+            totalVolumeElement.style.color = 'rgba(255, 105, 180, 1)'; // Hot pink
         } else {
-            totalVolumeElement.style.color = 'rgba(0, 255, 65, 1)'; // Green
+            totalVolumeElement.style.color = 'rgba(80, 250, 255, 1)'; // Neon cyan
         }
     }
     
@@ -633,23 +643,23 @@ document.addEventListener('DOMContentLoaded', () => {
             maximumFractionDigits: 6
         });
         
-        // Determine value category text and color
+        // Determine value category text and color - synthwave colors
         let valueCategory = '';
         let categoryColor = '';
         
         const value = tx.value || 0;
         if (value >= 100) {
             valueCategory = 'Very High';
-            categoryColor = 'rgba(255, 0, 0, 1)'; // Red
+            categoryColor = 'rgba(255, 50, 50, 1)'; // Bright red
         } else if (value >= 10) {
             valueCategory = 'High';
-            categoryColor = 'rgba(255, 165, 0, 1)'; // Orange
+            categoryColor = 'rgba(191, 85, 255, 1)'; // Neon purple
         } else if (value >= 1) {
             valueCategory = 'Medium';
-            categoryColor = 'rgba(255, 255, 0, 1)'; // Yellow
+            categoryColor = 'rgba(255, 105, 180, 1)'; // Hot pink
         } else {
             valueCategory = 'Low';
-            categoryColor = 'rgba(0, 255, 65, 1)'; // Green
+            categoryColor = 'rgba(80, 250, 255, 1)'; // Neon cyan
         }
         
         // Truncate addresses for mobile

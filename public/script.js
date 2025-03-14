@@ -24,13 +24,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Matrix settings
     let txDots = [];
-    let dotSize = isMobile ? 4 : 6; // Smaller dots on mobile
-    let dotSpacing = isMobile ? 15 : 20; // Space between dots
+    let fontSize = isMobile ? 12 : 16; // Size for kanji characters
+    let dotSpacing = isMobile ? 15 : 20; // Space between characters
     let activeTransaction = null;
-    // Maximum number of trail positions to track per dot
-    const MAX_TRAIL_LENGTH = isMobile ? 10 : 20; 
-    // Canvas clearing opacity (higher = shorter trails)
-    const CANVAS_FADE_OPACITY = 0.06; // Increased from 0.03 to make trails fade faster
+    // Canvas clearing opacity (complete clear for no trails)
+    const CANVAS_FADE_OPACITY = 1.0; // Full opacity for complete clear each frame
+    
+    // Collection of kanji characters to use for the visualization
+    const KANJI_CHARS = [
+        '零', '壱', '弐', '参', '肆', '伍', '陸', '漆', '捌', '玖', // Japanese numerals
+        '金', '銀', '貨', '幣', '財', '宝', '富', '資', '産', '価', // Finance/value related
+        '通', '送', '受', '取', '与', '仮', '想', '鎖', '証', '明', // Transaction related
+        '東', '西', '南', '北', '空', '天', '地', '風', '火', '水', // Elements
+        '光', '影', '動', '静', '高', '低', '大', '小', '急', '緩', // Properties
+        '強', '弱', '速', '遅', '新', '古', '始', '終', '実', '虚'  // More properties
+    ];
     
     // Transaction data
     let allTransactions = [];
@@ -86,14 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
         
-        // Adjust dot size and spacing based on screen size
-        dotSize = isMobile ? 4 : 6;
+        // Adjust font size and spacing based on screen size
+        fontSize = isMobile ? 12 : 16;
         dotSpacing = isMobile ? 15 : 20;
         
         // For very small screens
         if (window.innerWidth <= 480) {
-            dotSize = 3;
-            dotSpacing = 12;
+            fontSize = 10;
+            dotSpacing = 10;
         }
         
         // Initialize empty txDots array
@@ -329,24 +337,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate glow size based on transaction value
     // Higher value = larger glow
     function calculateGlowSize(value) {
-        if (!value || value === 0) return 5;
+        if (!value || value === 0) return fontSize * 1.2;
         
         // Use logarithmic scale for glow to handle wide range of values
-        // Range from 5 to 20
-        return Math.min(20, 5 + Math.log10(value + 1) * 5);
+        // Range from 1.2x to 3x of font size
+        return Math.min(fontSize * 3, fontSize * 1.2 + Math.log10(value + 1) * fontSize * 0.5);
     }
     
     // Calculate speed based on transaction value
     // Higher value = slower movement
     function calculateSpeed(value) {
-        if (!value || value === 0) return 1.8; // Increased base speed for zero-value transactions
+        if (!value || value === 0) return 3.0; // Further increased base speed for zero-value transactions
         
-        // Base speed is faster overall but still slower on mobile
-        const baseSpeed = isMobile ? 1.2 : 1.8; // Increased from 0.7/1.0 to 1.2/1.8
+        // Base speed is much faster overall but still slightly slower on mobile
+        const baseSpeed = isMobile ? 2.0 : 3.0; // Significantly increased from previous values
         
         // Use logarithmic scale to handle wide range of values
-        // Range from 0.4x to 1x of base speed (higher value = slower)
-        const speedFactor = Math.max(0.4, 1 - Math.log10(value + 1) / 5); // Adjusted factor calculation
+        // Range from 0.5x to 1x of base speed (higher value = slower)
+        const speedFactor = Math.max(0.5, 1 - Math.log10(value + 1) / 6); // Adjusted factor for faster overall movement
         return baseSpeed * speedFactor;
     }
     
@@ -354,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addTransactionsToMatrix(transactions) {
         transactions.forEach(tx => {
             // Calculate initial vertical position (spread across canvas height)
-            const y = Math.random() * (canvas.height - dotSize * 2) + dotSize;
+            const y = Math.random() * (canvas.height - fontSize) + fontSize;
             
             // Calculate speed based on value (higher value = slower movement)
             const value = tx.value || 0;
@@ -363,17 +371,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Calculate glow size based on value
             const glowSize = calculateGlowSize(value);
             
-            // Create a new transaction dot
+            // Select a random kanji character
+            const kanji = KANJI_CHARS[Math.floor(Math.random() * KANJI_CHARS.length)];
+            
+            // Create a new transaction representation
             const txDot = {
                 x: canvas.width + 10, // Start just off-screen to the right
                 y: y,
-                radius: dotSize,
+                kanji: kanji,         // The kanji character to display
+                fontSize: fontSize,   // Size of the character
                 glowSize: glowSize,
                 speed: speed,
                 tx: tx,
                 color: getTransactionColor(value),
-                hash: tx.hash,
-                trail: [] // Store previous positions for trail effect
+                hash: tx.hash
             };
             
             // Add to txDots array
@@ -469,21 +480,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Draw the matrix animation (dots moving horizontally)
+    // Draw the matrix animation (kanji moving horizontally)
     function drawMatrix() {
-        // Clear canvas with very slight fade effect (longer trails)
+        // Clear canvas completely each frame (no trails)
         ctx.fillStyle = `rgba(0, 0, 0, ${CANVAS_FADE_OPACITY})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw each transaction dot
+        // Draw each transaction kanji
         txDots.forEach((dot, index) => {
-            // Save previous position before moving
-            if (dot.trail.length >= MAX_TRAIL_LENGTH) {
-                dot.trail.pop(); // Remove oldest position if we exceed max trail length
-            }
-            dot.trail.unshift({x: dot.x, y: dot.y}); // Add current position to start of trail
-            
-            // Move dot leftward (from right to left)
+            // Move kanji leftward (from right to left)
             dot.x -= dot.speed;
             
             // Set opacity based on distance from sides of screen
@@ -498,33 +503,36 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check if dot is active
             const isActive = activeTransaction && activeTransaction.hash === dot.hash;
             
-            // Draw trail first (so it appears behind the main dot)
-            drawDotTrail(dot, opacity, isActive);
-            
-            // Draw glow effect (larger for bigger values)
-            const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
+            // Set font properties
             const color = dot.color;
-            const gradient = ctx.createRadialGradient(
-                dot.x, dot.y, 0,
-                dot.x, dot.y, glowSize
-            );
+            ctx.font = `bold ${dot.fontSize}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             
-            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`);
-            gradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.6})`);
-            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+            // Draw multiple layers of shadow for stronger glow effect
+            const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
             
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(dot.x, dot.y, glowSize, 0, Math.PI * 2);
-            ctx.fill();
+            // First pass - outer glow
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.5})`;
+            ctx.shadowBlur = glowSize * 1.5;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
             
-            // Draw the dot
+            // Draw the character
             ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
-            ctx.beginPath();
-            ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillText(dot.kanji, dot.x, dot.y);
             
-            // Remove dots that have moved off-screen to the left
+            // Second pass - inner glow (brighter)
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
+            ctx.shadowBlur = glowSize * 0.8;
+            ctx.fillText(dot.kanji, dot.x, dot.y);
+            
+            // Final pass - character itself (brightest)
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = `rgba(${Math.min(255, color.r + 50)}, ${Math.min(255, color.g + 50)}, ${Math.min(255, color.b + 50)}, ${opacity})`;
+            ctx.fillText(dot.kanji, dot.x, dot.y);
+            
+            // Remove kanji that have moved off-screen to the left
             if (dot.x < -50) {
                 txDots.splice(index, 1);
             }
@@ -534,67 +542,19 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(drawMatrix);
     }
     
-    // Draw the trail behind a dot
-    function drawDotTrail(dot, mainOpacity, isActive) {
-        const color = dot.color;
-        const trailLength = dot.trail.length;
-        
-        // Skip if no trail has formed yet
-        if (trailLength === 0) return;
-        
-        // Draw each position in the trail with decreasing opacity
-        dot.trail.forEach((pos, i) => {
-            // Calculate opacity based on position in trail (older = more transparent)
-            // More aggressive opacity reduction for more transparent trails
-            const trailOpacity = mainOpacity * Math.pow(0.85, i); // Exponential decay instead of linear
-            
-            // Skip drawing if nearly transparent (threshold increased)
-            if (trailOpacity < 0.08) return;
-            
-            // Calculate size reduction for trail (older = smaller)
-            const sizeReduction = i / (trailLength * 2);
-            const trailRadius = Math.max(1, dot.radius * (1 - sizeReduction));
-            
-            // Draw smaller glow for trail points
-            const trailGlowSize = Math.max(3, (isActive ? dot.glowSize * 1.2 : dot.glowSize) * (1 - sizeReduction));
-            
-            // Draw glow for trail point
-            const gradient = ctx.createRadialGradient(
-                pos.x, pos.y, 0,
-                pos.x, pos.y, trailGlowSize
-            );
-            
-            // Reduced opacity values for gradient stops
-            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.4})`); // Reduced from 0.6
-            gradient.addColorStop(0.6, `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.2})`); // Reduced from 0.3
-            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, trailGlowSize, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw the trail point with reduced opacity
-            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${trailOpacity * 0.5})`; // Reduced from 0.7
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, trailRadius, 0, Math.PI * 2);
-            ctx.fill();
-        });
-    }
-    
-    // Find the nearest transaction dot to a given position
+    // Find the nearest transaction kanji to a given position
     function findNearestDot(x, y) {
         let closestDot = null;
         let closestDistance = Number.MAX_VALUE;
         
-        // Calculate distance to each dot
+        // Calculate distance to each kanji
         txDots.forEach(dot => {
             const dx = dot.x - x;
             const dy = dot.y - y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Check if this is the closest dot
-            if (distance < closestDistance && distance < 30) { // 30px hit area
+            // Check if this is the closest kanji (using slightly larger hit area for text)
+            if (distance < closestDistance && distance < 40) { // 40px hit area for kanji
                 closestDistance = distance;
                 closestDot = dot;
             }

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereum Transaction Explorer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fab fa-ethereum"></i> Ethereum Transaction Explorer</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="controls">
+            <div class="status">
+                <span id="connection-status" class="connecting">
+                    <i class="fas fa-circle"></i> Connecting...
+                </span>
+                <span id="latest-block">Latest Block: --</span>
+            </div>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="min-value">Min Value (ETH):</label>
+                    <input type="number" id="min-value" min="0" step="0.01" placeholder="0">
+                </div>
+                <div class="filter-group">
+                    <label for="max-txs">Max Transactions:</label>
+                    <input type="number" id="max-txs" min="10" max="200" value="50">
+                </div>
+                <button id="apply-filters">Apply Filters</button>
+            </div>
+        </div>
+
+        <div class="transactions-container">
+            <div class="header-row">
+                <div class="tx-hash">Transaction Hash</div>
+                <div class="tx-from">From</div>
+                <div class="tx-to">To</div>
+                <div class="tx-value">Value (ETH)</div>
+            </div>
+            <div id="transactions" class="transactions-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading transactions...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Data provided by <a href="https://etherscan.io" target="_blank">Etherscan.io</a> | Updates every 10 seconds</p>
+        </div>
+    </footer>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 

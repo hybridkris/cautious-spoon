@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTransactions = [];
     let transactionsById = {};
     
+    // Batch tracking for API calls
+    let currentBatchId = 0;
+    let previousBatchId = null;
+    
     // Transaction value color thresholds - Synthwave palette
     const VALUE_COLORS = {
         default: { r: 80, g: 250, b: 255 },     // Neon cyan (0-1 ETH)
@@ -280,6 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
             updateLatestBlock(transactions[0].blockNumber);
         }
         
+        // Increment batch ID for this new set of transactions
+        previousBatchId = currentBatchId;
+        currentBatchId++;
+        
         // Add new transactions to our collection
         const newTransactions = transactions.filter(tx => {
             // Check if transaction already exists in our collection
@@ -287,6 +295,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (newTransactions.length === 0) return;
+        
+        // Tag each transaction with the current batch ID
+        newTransactions.forEach(tx => {
+            tx.batchId = currentBatchId;
+        });
         
         // Add to beginning of array (newest first)
         allTransactions = [...newTransactions, ...allTransactions];
@@ -312,6 +325,26 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update the value chart with new data point
         updateValueChart(newTransactions);
+        
+        // Set a timeout to remove previous batch of transactions after 5 seconds
+        if (previousBatchId !== null) {
+            setTimeout(() => {
+                removePreviousBatchTransactions(previousBatchId);
+            }, 5000);
+        }
+    }
+    
+    // Function to remove transactions from a specific batch
+    function removePreviousBatchTransactions(batchId) {
+        // Remove from the txDots array
+        txDots = txDots.filter(dot => {
+            return !dot.tx.batchId || dot.tx.batchId !== batchId;
+        });
+        
+        // If the active transaction was part of this batch, hide details
+        if (activeTransaction && activeTransaction.batchId === batchId) {
+            hideTransactionDetails();
+        }
     }
     
     // Update connection status UI

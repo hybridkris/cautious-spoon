@@ -495,27 +495,6 @@ footer a:hover {
     flex: 1;
 }
 
-/* Clear details button for mobile */
-.clear-details-btn {
-    align-self: center;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: rgba(25, 25, 50, 0.7);
-    border: 1px solid var(--synthwave-purple);
-    border-radius: 4px;
-    color: var(--synthwave-cyan);
-    font-family: var(--terminal-font);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-shadow: 0 0 5px var(--synthwave-cyan);
-}
-
-.clear-details-btn:hover {
-    background-color: var(--synthwave-blue);
-    box-shadow: 0 0 15px var(--synthwave-pink);
-}
-
 /* Mobile layout */
 @media (max-width: 768px) {
     /* Content container adjustments */
@@ -558,7 +537,7 @@ footer a:hover {
     /* Block visualization takes 50% of screen */
     .visualization-section {
         width: 100%;
-        height: 50%;
+        height: 40%;
     }
     
     /* Block data takes 30% of screen */
@@ -569,7 +548,7 @@ footer a:hover {
     
     /* Line chart takes 20% of screen */
     .volume-section {
-        height: 20%;
+        height: 30%;
         margin-top: 0.3rem;
     }
     
@@ -614,14 +593,6 @@ footer a:hover {
     .panel-title {
         font-size: 0.9rem;
         margin-bottom: 0.3rem;
-    }
-    
-    /* Adjust the clear button size for mobile */
-    .clear-details-btn {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-        margin-top: 0.4rem;
-        margin-bottom: 0.4rem;
     }
     
     /* Fix potential overflow issues in transaction details */

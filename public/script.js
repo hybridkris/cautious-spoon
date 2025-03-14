@@ -787,10 +787,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Handle mouse exit from canvas
     function handleMouseExit() {
-        // On desktop, hide details when mouse leaves
-        if (!isMobile) {
-            hideTransactionDetails();
-        }
+        // Hide details when mouse leaves canvas
+        hideTransactionDetails();
     }
     
     // Mouse event handlers
@@ -807,7 +805,15 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault(); // Prevent scrolling when touching the canvas
         if (e.touches.length > 0) {
             const touch = e.touches[0];
-            handleInteraction(touch.clientX, touch.clientY);
+            const transaction = findNearestDot(touch.clientX - canvas.getBoundingClientRect().left, 
+                                              touch.clientY - canvas.getBoundingClientRect().top);
+            
+            if (transaction) {
+                handleInteraction(touch.clientX, touch.clientY);
+            } else {
+                // If no transaction is found at tap location, hide details
+                hideTransactionDetails();
+            }
         }
     }, { passive: false });
 
@@ -883,14 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add mobile optimizations
         if (isMobile) {
-            // Add clear button for mobile
-            if (!document.querySelector('.clear-details-btn')) {
-                const clearButton = document.createElement('button');
-                clearButton.textContent = 'Hide Details';
-                clearButton.className = 'clear-details-btn';
-                clearButton.addEventListener('click', hideTransactionDetails);
-                detailsPanel.appendChild(clearButton);
-            }
+            // Clear button code removed
         }
         
         drawMatrix();

@@ -554,7 +554,7 @@ footer a:hover {
     
     /* Line chart takes 20% of screen */
     .volume-section {
-        height: 15%; /* Reduced from 20% */
+        height: 20%; /* Reduced from 20% */
         margin-top: 0;
         padding-bottom: 0;
     }

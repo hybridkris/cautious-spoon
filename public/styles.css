@@ -560,6 +560,7 @@ footer a:hover {
         padding: 0.5rem;
         max-height: 100%;
         overflow-y: auto;
+        margin-bottom: 0; /* Remove any margin that might cause space */
     }
     
     /* Compact chart for mobile */
@@ -643,6 +644,7 @@ footer a:hover {
     /* Make the transaction details more compact */
     #details-panel {
         padding: 0.4rem;
+        margin-bottom: 0; /* Remove any margin that might cause space */
     }
     
     .detail-row {

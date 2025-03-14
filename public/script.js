@@ -98,13 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 2,
+                        right: 2,
+                        bottom: 2,
+                        left: 2
+                    }
+                },
                 scales: {
                     x: {
                         ticks: { 
                             color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             maxRotation: 0,
                             autoSkip: true,
-                            maxTicksLimit: 10
+                            maxTicksLimit: 10,
+                            padding: 4 // Reduced padding
                         },
                         grid: { color: 'rgba(80, 250, 255, 0.15)' }
                     },
@@ -117,7 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
                                 if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
                                 return value;
-                            }
+                            },
+                            padding: 4 // Reduced padding
                         },
                         grid: { color: 'rgba(80, 250, 255, 0.15)' }
                     }
@@ -127,7 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         labels: { 
                             color: 'rgba(80, 250, 255, 1)', // Neon cyan
                             boxWidth: 40,
-                            padding: 10
+                            padding: 6, // Reduced padding
+                            font: {
+                                size: 11 // Smaller font
+                            }
                         },
                         display: true
                     },
@@ -160,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 animation: {
-                    duration: 1000
+                    duration: 600 // Faster animations
                 }
             }
         });
@@ -559,18 +572,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillText(`#${dot.blockNumber}`, dot.x, dot.y - cubeSize * 2);
                 ctx.restore();
                 
-                // Draw connecting lines
-                txDots.forEach(otherDot => {
-                    if (otherDot.hash !== dot.hash && otherDot.blockNumber === dot.blockNumber) {
+                // Draw connecting lines - but limit to closest cubes to reduce clutter
+                if (isActive) {
+                    // Get all cubes from the same block and sort by distance
+                    const sameBlockDots = txDots.filter(otherDot => 
+                        otherDot.hash !== dot.hash && otherDot.blockNumber === dot.blockNumber
+                    ).sort((a, b) => {
+                        const distA = Math.sqrt(Math.pow(a.x - dot.x, 2) + Math.pow(a.y - dot.y, 2));
+                        const distB = Math.sqrt(Math.pow(b.x - dot.x, 2) + Math.pow(b.y - dot.y, 2));
+                        return distA - distB;
+                    });
+                    
+                    // Only connect to the 3 closest cubes to reduce clutter
+                    const maxLines = 3;
+                    sameBlockDots.slice(0, maxLines).forEach(otherDot => {
                         // Draw a faint connecting line
                         ctx.beginPath();
                         ctx.moveTo(dot.x, dot.y);
                         ctx.lineTo(otherDot.x, otherDot.y);
-                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`;
-                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.1)`; // Reduced opacity
+                        ctx.lineWidth = 0.5; // Thinner lines
                         ctx.stroke();
-                    }
-                });
+                    });
+                }
             }
             
             // Remove cubes that have moved off-screen to the left

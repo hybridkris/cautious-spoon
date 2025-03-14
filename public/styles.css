@@ -37,7 +37,7 @@ body {
     width: 100%;
     max-width: 1600px;
     margin: 0 auto;
-    padding: 1rem;
+    padding: 0.8rem;
     box-sizing: border-box;
     flex: 1;
     display: flex;
@@ -58,8 +58,8 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
     border-bottom: 2px solid rgba(80, 250, 255, 0.3);
 }
 
@@ -138,8 +138,8 @@ main {
 /* Details panel (right) */
 #details-panel {
     flex: 0.8;
-    min-width: 30%;
-    max-width: 40%;
+    min-width: 50%;
+    max-width: 100%;
     padding: 15px;
     background-color: rgba(25, 25, 50, 0.8);
     border-left: 1px solid var(--synthwave-purple);
@@ -225,11 +225,11 @@ main {
 
 /* Chart container styling */
 #chart-container {
-    height: 144px;
+    height: 200px;
     width: 100%;
     background-color: rgba(25, 25, 50, 0.7);
     border-top: 1px solid var(--synthwave-purple);
-    padding: 10px;
+    padding: 5px;
     position: relative;
     box-shadow: 0 0 15px var(--synthwave-purple);
     transition: height 0.3s ease;
@@ -262,7 +262,7 @@ main {
 .chart-wrapper {
     position: relative;
     width: 100%;
-    height: calc(100% - 25px);
+    height: calc(100% - 5px);
     margin-top: 5px;
 }
 
@@ -325,15 +325,15 @@ footer a:hover {
     display: flex;
     flex-direction: column;
     flex: 1;
-    gap: 1rem;
+    gap: 0.6rem;
 }
 
 /* Desktop split layout */
 .main-content-wrapper {
     display: flex;
     flex-direction: row;
-    gap: 1rem;
-    height: 70vh;
+    gap: 0.8rem;
+    height: 58vh;
 }
 
 .visualization-section {
@@ -348,8 +348,8 @@ footer a:hover {
 
 /* Chart takes the remaining space below the main content */
 .volume-section {
-    height: calc(30vh - 2rem);
-    margin-top: 1rem;
+    height: calc(30vh - 1rem);
+    margin-top: 0.5rem;
 }
 
 /* Matrix visualization container */
@@ -365,11 +365,12 @@ footer a:hover {
 
 /* Transaction details panel */
 #details-panel {
-    padding: 1rem;
+    padding: 0.8rem;
     background-color: rgba(25, 25, 50, 0.5);
     border: 1px solid rgba(191, 85, 255, 0.5);
     border-radius: 5px;
     height: 100%;
+    width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -386,11 +387,11 @@ footer a:hover {
 
 #chart-container {
     width: 100%;
-    height: calc(100% - 2rem);
+    height: calc(100% - 1.8rem);
     background-color: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(80, 250, 255, 0.3);
     border-radius: 5px;
-    padding: 0.5rem;
+    padding: 0.4rem;
     box-sizing: border-box;
     position: relative;
 }
@@ -430,8 +431,8 @@ footer a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 1.5rem;
-    margin-bottom: 0.5rem;
+    height: 1.3rem;
+    margin-bottom: 0.3rem;
 }
 
 .volume-title {
@@ -453,7 +454,7 @@ footer a:hover {
 
 /* Transaction details panel components */
 .panel-title {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.4rem 0;
     color: rgba(191, 85, 255, 1);
     font-size: 1rem;
 }
@@ -461,9 +462,10 @@ footer a:hover {
 #tx-details {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.4rem;
     overflow-y: auto;
     flex: 1;
+    width: 100%;
 }
 
 #tx-details.hidden {
@@ -473,19 +475,22 @@ footer a:hover {
 .detail-row {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     font-size: 0.8rem;
     line-height: 1.3;
+    width: 100%;
+    margin-bottom: 0.3rem;
 }
 
 .detail-label {
     font-weight: bold;
     color: rgba(255, 105, 180, 1);
-    width: 80px;
+    width: 75px;
     flex-shrink: 0;
 }
 
 .detail-value {
     color: rgba(80, 250, 255, 1);
     word-break: break-all;
+    flex: 1;
 } 

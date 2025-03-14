@@ -18,7 +18,7 @@ if (!process.env.ETHERSCAN_API_KEY) {
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const ETHERSCAN_API_URL = 'https://api.etherscan.io/api';
 const PORT = process.env.PORT || 3000;
-const UPDATE_INTERVAL = 10000; // 10 seconds
+const UPDATE_INTERVAL = 15000; // 15 seconds
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));

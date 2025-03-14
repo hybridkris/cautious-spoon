@@ -332,61 +332,100 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Calculate glow size based on transaction value
-    // Higher value = larger glow
+    // Higher value = larger glow, but ensure all diamonds have a substantial glow
     function calculateGlowSize(value) {
-        if (!value || value === 0) return diamondSize * 1.5;
+        if (!value || value === 0) return diamondSize * 2;
         
-        // Use logarithmic scale for glow to handle wide range of values
-        // Range from 1.5x to 3x of diamond size
-        return Math.min(diamondSize * 3, diamondSize * 1.5 + Math.log10(value + 1) * diamondSize * 0.5);
+        // Increased minimum glow size to ensure all diamonds glow prominently
+        // Range from 2x to 3.5x of diamond size
+        return Math.min(diamondSize * 3.5, diamondSize * 2 + Math.log10(value + 1) * diamondSize * 0.5);
     }
     
-    // Calculate speed based on transaction value
-    // Higher value = slower movement
-    function calculateSpeed(value) {
-        // Apply 60% speed factor to slow down all movement
-        // Then reduce it by another 40%
-        const speedFactor = 0.36; // 0.6 * 0.6 (40% reduction)
+    // Calculate speed based on transaction value and block number
+    // This will cause transactions from the same block to move at similar speeds
+    function calculateSpeed(value, blockNumber) {
+        // Apply base speed factor (previously reduced by 40%)
+        const baseSpeedFactor = 0.36;
         
-        if (!value || value === 0) return 3.0 * speedFactor; // Slowed base speed for zero-value transactions
+        // Use block number to create block-based speed variations
+        // Convert block number to a value between 0.85 and 1.15 for 30% variation between blocks
+        const blockFactor = blockNumber ? (0.85 + (blockNumber % 10) * 0.03) : 1.0;
         
-        // Base speed is much faster overall but still slightly slower on mobile
-        const baseSpeed = isMobile ? 2.0 * speedFactor : 3.0 * speedFactor; // Slowed significantly
+        // Base speed varies by value and is affected by mobile status
+        let speed;
+        if (!value || value === 0) {
+            speed = 3.0 * baseSpeedFactor;
+        } else {
+            const baseSpeed = isMobile ? 2.0 * baseSpeedFactor : 3.0 * baseSpeedFactor;
+            // Value still affects speed but to a lesser degree
+            const valueSpeedFactor = Math.max(0.7, 1 - Math.log10(value + 1) / 10); // Reduced value impact
+            speed = baseSpeed * valueSpeedFactor;
+        }
         
-        // Use logarithmic scale to handle wide range of values
-        // Range from 0.5x to 1x of base speed (higher value = slower)
-        const valueSpeedFactor = Math.max(0.5, 1 - Math.log10(value + 1) / 6);
-        return baseSpeed * valueSpeedFactor;
+        // Apply block factor to create grouping effect
+        return speed * blockFactor;
     }
     
     // Add transactions to the matrix visualization
     function addTransactionsToMatrix(transactions) {
+        // Group transactions by block number for better visual clustering
+        const blockGroups = {};
+        
+        // First pass: group transactions by block
         transactions.forEach(tx => {
-            // Calculate initial vertical position (spread across canvas height)
-            const y = Math.random() * (canvas.height - diamondSize) + diamondSize;
+            const blockNumber = tx.blockNumber || 0;
+            if (!blockGroups[blockNumber]) {
+                blockGroups[blockNumber] = [];
+            }
+            blockGroups[blockNumber].push(tx);
+        });
+        
+        // Second pass: add transactions with coordinated positioning by block
+        Object.entries(blockGroups).forEach(([blockNumber, txs]) => {
+            // Create a "lane" for this block - slight vertical alignment
+            // Generate a random base Y position for this block (with some constraints to avoid edges)
+            const blockBaseY = Math.random() * (canvas.height * 0.6) + (canvas.height * 0.2);
+            const blockNum = parseInt(blockNumber);
             
-            // Calculate speed based on value (higher value = slower movement)
-            const value = tx.value || 0;
-            const speed = calculateSpeed(value);
-            
-            // Calculate glow size based on value
-            const glowSize = calculateGlowSize(value);
-            
-            // Create a new transaction representation with diamond
-            const txDot = {
-                x: canvas.width + 10, // Start just off-screen to the right
-                y: y,
-                size: diamondSize,   // Size of the diamond
-                glowSize: glowSize,
-                speed: speed,
-                tx: tx,
-                color: getTransactionColor(value),
-                hash: tx.hash,
-                rotation: Math.random() * Math.PI // Random initial rotation for variety
-            };
-            
-            // Add to txDots array
-            txDots.push(txDot);
+            // Add each transaction in this block group
+            txs.forEach((tx, index) => {
+                // Calculate position with some variation but still clustered
+                // Diamonds in the same block will be roughly aligned horizontally and vertically
+                const laneWidth = canvas.height * 0.2; // Lane takes 20% of canvas height
+                
+                // Vary y position within the block's lane for a bit of natural randomness
+                // But keep them somewhat aligned by using the blockBaseY as a reference
+                const yVariation = (Math.random() - 0.5) * laneWidth;
+                const y = blockBaseY + yVariation;
+                
+                // Calculate speed based on both value and block number
+                const value = tx.value || 0;
+                const speed = calculateSpeed(value, blockNum);
+                
+                // Calculate glow size based on value
+                const glowSize = calculateGlowSize(value);
+                
+                // Stagger x starting positions for diamonds in the same block
+                // This creates a small delay between diamonds from the same block
+                const xOffset = index * (Math.random() * 30 + 15); // Random spacing between 15-45px
+                
+                // Create a new transaction representation with diamond
+                const txDot = {
+                    x: canvas.width + 10 + xOffset, // Start just off-screen to the right with offset
+                    y: y,
+                    size: diamondSize,   // Size of the diamond
+                    glowSize: glowSize,
+                    speed: speed,
+                    tx: tx,
+                    color: getTransactionColor(value),
+                    hash: tx.hash,
+                    blockNumber: blockNum, // Store block number for reference
+                    rotation: Math.random() * Math.PI // Random initial rotation for variety
+                };
+                
+                // Add to txDots array
+                txDots.push(txDot);
+            });
         });
     }
     
@@ -508,16 +547,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = dot.color;
             const size = isActive ? dot.size * 1.3 : dot.size;
             
-            // Draw multiple layers of shadow for stronger glow effect
+            // Enhanced glow effect for all diamonds
             const glowSize = isActive ? dot.glowSize * 1.5 : dot.glowSize;
             
-            // Set shadow for glow effect
-            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
-            ctx.shadowBlur = glowSize;
+            // Apply multi-layered glow for a more prominent effect
+            // First pass - outer glow (larger, more transparent)
+            ctx.save();
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.5})`;
+            ctx.shadowBlur = glowSize * 1.3;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             
-            // Draw the diamond shape
+            // Draw the diamond shape with enhanced glow
             ctx.save();
             ctx.translate(dot.x, dot.y);
             ctx.rotate(dot.rotation);
@@ -530,23 +571,79 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.lineTo(-size, 0);  // Left
             ctx.closePath();
             
-            // Fill with gradient for more depth
+            // Fill with enhanced gradient for more depth and glow
             const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
-            gradient.addColorStop(0, `rgba(${Math.min(255, color.r + 50)}, ${Math.min(255, color.g + 50)}, ${Math.min(255, color.b + 50)}, ${opacity})`);
+            gradient.addColorStop(0, `rgba(${Math.min(255, color.r + 70)}, ${Math.min(255, color.g + 70)}, ${Math.min(255, color.b + 70)}, ${opacity})`);
+            gradient.addColorStop(0.6, `rgba(${Math.min(255, color.r + 30)}, ${Math.min(255, color.g + 30)}, ${Math.min(255, color.b + 30)}, ${opacity})`);
             gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`);
             
             ctx.fillStyle = gradient;
             ctx.fill();
             
-            // Add a subtle stroke for definition
-            ctx.strokeStyle = `rgba(${Math.min(255, color.r + 100)}, ${Math.min(255, color.g + 100)}, ${Math.min(255, color.b + 100)}, ${opacity})`;
-            ctx.lineWidth = 1;
+            // Add a more prominent stroke for definition and additional glow
+            ctx.strokeStyle = `rgba(${Math.min(255, color.r + 120)}, ${Math.min(255, color.g + 120)}, ${Math.min(255, color.b + 120)}, ${opacity})`;
+            ctx.lineWidth = 1.5;
             ctx.stroke();
             
             ctx.restore();
+            ctx.restore();
             
-            // Reset shadow for next drawing
-            ctx.shadowBlur = 0;
+            // Second pass - inner glow (smaller, more intense)
+            ctx.save();
+            ctx.shadowColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`;
+            ctx.shadowBlur = glowSize * 0.8;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Redraw the diamond for the inner glow
+            ctx.save();
+            ctx.translate(dot.x, dot.y);
+            ctx.rotate(dot.rotation);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size);
+            ctx.lineTo(size, 0);
+            ctx.lineTo(0, size);
+            ctx.lineTo(-size, 0);
+            ctx.closePath();
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            ctx.restore();
+            ctx.restore();
+            
+            // If this diamond is active or in the same block as the active transaction,
+            // display the block number above it
+            if (isActive || (activeTransaction && dot.blockNumber === activeTransaction.blockNumber)) {
+                // Display block number above the diamond
+                ctx.save();
+                ctx.font = `bold ${diamondSize * 0.8}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+                ctx.shadowColor = `rgba(0, 0, 0, 0.8)`;
+                ctx.shadowBlur = 3;
+                
+                // Position the text above the diamond
+                ctx.fillText(`#${dot.blockNumber}`, dot.x, dot.y - diamondSize * 1.5);
+                ctx.restore();
+                
+                // Draw a connecting line to all diamonds of the same block if this is the active diamond
+                if (isActive) {
+                    txDots.forEach(otherDot => {
+                        if (otherDot.hash !== dot.hash && otherDot.blockNumber === dot.blockNumber) {
+                            // Draw a faint connecting line
+                            ctx.beginPath();
+                            ctx.moveTo(dot.x, dot.y);
+                            ctx.lineTo(otherDot.x, otherDot.y);
+                            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    });
+                }
+            }
             
             // Remove diamonds that have moved off-screen to the left
             if (dot.x < -50) {
@@ -707,4 +804,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Start the magic!
     init();
-}); 
+});
